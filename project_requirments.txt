@@ -1,0 +1,5314 @@
+AS2 Pharmacovigilance Portal - Complete Page Breakdown
+Let me analyze your requirements and provide a detailed page-by-page breakdown.
+📊 TOTAL PAGES NEEDED: 28 Pages
+Organized into 8 main sections:
+
+SECTION 1: AUTHENTICATION & ACCESS (3 Pages)
+Page 1: Login Page (/login)
+Purpose: Secure authentication entry point
+Features & Functionality:
+
+Email/password input fields with validation
+"Remember me" checkbox
+"Forgot Password" link → redirects to password reset flow
+MFA code input (appears after password verification if MFA enabled)
+SSO button for enterprise clients (SAML/OAuth integration)
+Session management (JWT token generation)
+Failed login attempt tracking (max 5 attempts → account lock)
+
+Database Tables Used:
+
+users table (username, password_hash, mfa_enabled, last_login)
+login_attempts table (user_id, timestamp, ip_address, success/failure)
+sessions table (user_id, token, expires_at)
+
+UI Components:
+
+Form inputs with real-time validation
+Error messages display
+Loading spinner during authentication
+Redirect to /dashboard on success
+
+
+Page 2: User Registration (/register)
+Purpose: New organization onboarding
+Features & Functionality:
+
+Multi-step form wizard (4 steps):
+
+Step 1: Company details (name, address, country, industry type)
+Step 2: Admin user creation (name, email, password, confirm password)
+Step 3: Email verification (send verification code, validate input)
+Step 4: Terms of service acceptance (checkbox + signature)
+
+
+Password strength meter
+Email verification workflow (send code via AWS SES)
+Auto-generate tenant ID
+Create default roles and permissions
+
+Database Tables Used:
+
+tenants table (tenant_id, company_name, country, created_at, status)
+users table (user_id, tenant_id, email, password_hash, role, verified)
+email_verifications table (user_id, code, expires_at, verified)
+audit_logs table (log all registration actions)
+
+UI Components:
+
+Progress stepper (1/4, 2/4, 3/4, 4/4)
+Form validation with inline error messages
+Success confirmation modal
+
+
+Page 3: Dashboard Home (/dashboard)
+Purpose: High-level overview and quick access
+Features & Functionality:
+
+Widget 1: Real-time stats cards
+
+Messages sent today (count + percentage change)
+Messages received today (count + percentage change)
+Pending MDN acknowledgments (count + alert icon if >10)
+Certificate expiry alerts (count expiring in <30 days)
+
+
+Widget 2: Recent activity timeline
+
+Last 10 AS2 transactions with timestamps
+Status indicators (✅ success, ⚠️ pending, ❌ failed)
+Click to view details
+
+
+Widget 3: System health status
+
+AWS Transfer Family service status (green/yellow/red)
+S3 bucket connectivity check
+Lambda function health check
+Last successful health check timestamp
+
+
+Widget 4: Quick action buttons
+
+"Send New File" → /send
+"View Inbox" → /inbox
+"Add Partner" → /partners/new
+
+
+Widget 5: Charts
+
+Line chart: Message volume (last 7 days)
+Donut chart: Success vs. failure rate
+Bar chart: Top 5 active partners
+
+
+
+Database Tables Used:
+
+messages table (count by status, group by date)
+partners table (active partner count)
+certificates table (expiry date calculations)
+system_health table (last health check results)
+
+API Calls:
+
+GET /api/v1/dashboard/stats (real-time counts)
+GET /api/v1/dashboard/recent-activity (last 10 transactions)
+GET /api/v1/dashboard/health (system status)
+GET /api/v1/dashboard/charts (chart data)
+
+Auto-Refresh:
+
+Stats update every 30 seconds via WebSocket
+Activity timeline updates every 10 seconds
+
+
+SECTION 2: PARTNER MANAGEMENT (5 Pages)
+Page 4: Partner Directory (/partners)
+Purpose: View and manage all trading partners
+Features & Functionality:
+
+Table view with columns:
+
+Partner Name
+AS2 ID
+Organization Type (badge: Regulatory Agency/MAH/CRO)
+Status (Active/Testing/Inactive with color indicators)
+Certificate Expiry (date with color-coded warnings)
+Last Message (timestamp)
+Actions dropdown (Edit, Test, View, Disable, Delete)
+
+
+Search bar: Filter by name or AS2 ID (debounced search)
+Filters:
+
+Status dropdown (All/Active/Testing/Inactive)
+Organization Type multi-select
+Certificate expiry range
+
+
+Sorting: Click column headers to sort
+Pagination: 25 partners per page
+Bulk actions: Select multiple → Bulk test connection
+Export button: Download partner list as CSV
+
+Database Tables Used:
+
+partners table (partner_id, name, as2_id, org_type, status, created_at)
+certificates table (partner_id, cert_type, expiry_date)
+messages table (last_message_timestamp per partner)
+
+API Calls:
+
+GET /api/v1/partners?page=1&limit=25&status=active&search=FDA
+POST /api/v1/partners/bulk-test (test multiple connections)
+DELETE /api/v1/partners/{partnerId} (soft delete)
+
+UI Components:
+
+Data table with advanced filtering
+Status badges with tooltips
+Quick action context menu
+Confirmation modals for delete actions
+
+
+Page 5: Add New Partner Wizard (/partners/new)
+Purpose: Step-by-step partner onboarding
+Features & Functionality:
+Step 1: Basic Information
+
+Partner Name (text input, required)
+Organization Type (dropdown: Regulatory Agency/MAH/CRO/Other)
+AS2 Identifier (text input, validates uniqueness)
+Contact Name (text input)
+Contact Email (email validation)
+Contact Phone (phone format validation)
+Notes (textarea, optional)
+
+Step 2: AS2 Configuration
+
+AS2 Station ID (your identifier to them)
+Partner's AS2 URL endpoint (validates URL format)
+Message Subject Line template (text input with variables: {filename}, {date})
+Encryption Algorithm (dropdown: AES-128, AES-192, AES-256, 3DES)
+Signing Algorithm (dropdown: SHA-1, SHA-256, SHA-384, SHA-512)
+Compression (checkbox: Enable ZLIB compression)
+
+Step 3: Certificate Upload
+
+Upload Partner's Encryption Certificate:
+
+File upload (drag-and-drop or browse, accepts .pem, .crt, .cer)
+Auto-parse certificate details:
+
+Subject DN
+Issuer DN
+Valid From / Valid To dates
+Key Size (2048/3072/4096 bits)
+Serial Number
+
+
+Certificate validation checks:
+
+✅ Not expired
+✅ Key strength ≥2048 bits
+✅ Valid X.509 format
+
+
+Display warnings if any checks fail
+
+
+Upload Partner's Signing Certificate:
+
+Same process as encryption certificate
+Can use same certificate for both (checkbox option)
+
+
+
+Step 4: MDN Settings
+
+Request Signed MDN (radio: Yes/No, default: Yes)
+MDN Delivery Method (radio: Synchronous/Asynchronous)
+MDN Receipt Timeout (number input, default: 15 minutes, range: 5-60)
+MDN Signing Algorithm (dropdown: SHA-256, SHA-384, SHA-512)
+Retry Settings:
+
+Enable auto-retry on MDN timeout (checkbox)
+Max retry attempts (number input, 1-5)
+Retry interval (minutes)
+
+
+
+Step 5: Testing
+
+Test Connection Button:
+
+Uploads test E2B(R3) XML file (pre-loaded sample)
+Shows real-time progress:
+
+⏳ Encrypting test file...
+⏳ Sending to partner endpoint...
+⏳ Waiting for MDN...
+✅ MDN received successfully!
+
+
+Displays test results:
+
+Connection time (ms)
+MDN received (yes/no)
+MIC match (yes/no)
+Error details (if failed)
+
+
+
+
+Manual Review Section:
+
+Upload Trading Partner Agreement (TPA) document
+Checkbox: "I confirm business relationship is established"
+Checkbox: "I have verified partner's regulatory credentials"
+
+
+Activation Button:
+
+Only enabled if all tests pass
+Changes partner status from "Testing" to "Active"
+Sends welcome email to partner contact
+
+
+
+Database Tables Used:
+
+partners table (insert new partner)
+certificates table (insert encryption + signing certs)
+partner_config table (AS2 settings)
+partner_tests table (test results history)
+audit_logs table (log all wizard steps)
+
+API Calls:
+
+POST /api/v1/partners (create partner)
+POST /api/v1/partners/{partnerId}/certificates (upload certs)
+POST /api/v1/partners/{partnerId}/test (run connection test)
+PUT /api/v1/partners/{partnerId}/activate (change status to Active)
+
+Backend Integrations:
+
+AWS Transfer Family API: Create trading partner connector
+AWS S3: Store certificate files
+AWS Lambda: Certificate validation function
+AWS SES: Send welcome email
+
+
+Page 6: Partner Details Page (/partners/{partnerId})
+Purpose: View and edit single partner configuration
+Features & Functionality:
+Tab 1: Overview
+
+Partner name and AS2 ID (editable inline)
+Status badge with toggle (Active ↔ Inactive)
+Contact information (editable form)
+Quick stats cards:
+
+Total messages sent to this partner
+Total messages received from this partner
+Success rate (%)
+Last message timestamp
+
+
+
+Tab 2: AS2 Configuration
+
+Display all AS2 settings from wizard
+Edit mode toggle button
+Save changes button (validates before saving)
+Test connection button (runs same test as wizard)
+Configuration history timeline (shows who changed what and when)
+
+Tab 3: Certificates
+
+Current Encryption Certificate:
+
+Certificate details display
+Expiry countdown (e.g., "Expires in 89 days")
+Download certificate button
+Replace certificate button (opens upload modal)
+
+
+Current Signing Certificate:
+
+Same as encryption certificate
+
+
+Certificate History:
+
+Table showing previous certificates
+Columns: Certificate Type, Uploaded Date, Expiry Date, Replaced By, Status
+Download historical certificates
+
+
+
+Tab 4: Message History
+
+Embedded table (same as main Inbox/Outbox but filtered by this partner)
+Last 50 messages (sent + received)
+Filter by direction (sent/received)
+Click message → opens message detail modal
+
+Tab 5: Activity Log
+
+Audit trail specific to this partner
+All configuration changes
+All test connection attempts
+Status changes
+Certificate uploads/rotations
+
+Actions Section (Top Right):
+
+Edit Configuration button
+Test Connection button
+Disable Partner button (confirmation modal)
+Delete Partner button (confirmation modal with warning)
+
+Database Tables Used:
+
+partners table (full partner record)
+partner_config table (AS2 settings)
+certificates table (current + historical)
+messages table (filtered by partner_id)
+audit_logs table (partner-specific logs)
+
+API Calls:
+
+GET /api/v1/partners/{partnerId} (full partner details)
+PUT /api/v1/partners/{partnerId} (update configuration)
+GET /api/v1/partners/{partnerId}/messages?limit=50
+GET /api/v1/partners/{partnerId}/audit-logs
+DELETE /api/v1/partners/{partnerId} (soft delete)
+
+
+Page 7: Partner Test Connection (/partners/{partnerId}/test)
+Purpose: Standalone page for detailed connection testing
+Features & Functionality:
+
+Partner name and AS2 ID display
+Test Type Selection:
+
+Quick Test (sends small test file, ~5 KB)
+Full Test (sends actual E2B(R3) sample file, ~50 KB)
+Custom Test (upload your own test file)
+
+
+Test Execution Panel:
+
+Start Test button
+Real-time progress log:
+
+
+
+    [10:15:30] Test initiated...
+    [10:15:31] Loading test file...
+    [10:15:32] Encrypting with partner certificate...
+    [10:15:33] Signing with our private key...
+    [10:15:34] Sending to https://partner.axway.com:8443/as2...
+    [10:15:36] HTTP 200 OK received
+    [10:15:36] MDN received (synchronous)
+    [10:15:37] Verifying MDN signature...
+    [10:15:37] Comparing MIC values...
+    [10:15:37] ✅ TEST PASSED - All checks successful!
+
+Test Results Summary:
+
+Connection Status: ✅ Success / ❌ Failed
+Response Time: 2.3 seconds
+Encryption: ✅ AES-256 successful
+Signing: ✅ SHA-256 successful
+MDN Received: ✅ Yes (Synchronous)
+MDN Signature: ✅ Verified
+MIC Match: ✅ Matched (aB3xK9mP2qR...)
+Partner Endpoint: Reachable
+
+
+Troubleshooting Panel:
+
+If test fails, show detailed error:
+
+Error code
+Error message
+Suggested fixes (checklist)
+
+
+Download diagnostic report button (PDF with full logs)
+
+
+Test History:
+
+Table showing past test results
+Columns: Test Date, Test Type, Status, Response Time, Tester (user)
+
+
+
+Database Tables Used:
+
+partner_tests table (test_id, partner_id, test_type, status, response_time, results_json, tested_by, tested_at)
+partners table (last_test_date, last_test_status)
+
+API Calls:
+
+POST /api/v1/partners/{partnerId}/test (execute test)
+GET /api/v1/partners/{partnerId}/test-history (past tests)
+GET /api/v1/partners/{partnerId}/test/{testId}/report (download PDF)
+
+Backend Integrations:
+
+AWS Transfer Family: Send test AS2 message
+AWS Lambda: Certificate validation, MIC calculation
+AWS CloudWatch: Log test execution details
+
+
+Page 8: Partner Certificate Rotation (/partners/{partnerId}/certificates/rotate)
+Purpose: Replace expiring partner certificates
+Features & Functionality:
+
+Current certificate display:
+
+Certificate details
+Days until expiry (with urgency color)
+Warning banner if <30 days
+
+
+Certificate Rotation Wizard:
+
+Step 1: Upload new certificate
+
+File upload (drag-and-drop)
+Auto-parse and validate new certificate
+Compare with current certificate (highlight differences)
+
+
+Step 2: Schedule rotation
+
+Option 1: Rotate immediately
+Option 2: Schedule for specific date/time
+Set overlap period (both certs valid for X days)
+
+
+Step 3: Test with new certificate
+
+Automatically runs test connection using new cert
+Must pass before proceeding
+
+
+Step 4: Confirm and activate
+
+Review summary
+Confirm button
+Automatically archives old certificate
+Updates partner configuration
+Sends notification email
+
+
+
+
+
+Database Tables Used:
+
+certificates table (insert new, archive old)
+certificate_rotation_schedule table (if scheduled rotation)
+audit_logs table (rotation history)
+
+API Calls:
+
+POST /api/v1/partners/{partnerId}/certificates/rotate
+POST /api/v1/partners/{partnerId}/certificates/schedule-rotation
+
+
+SECTION 3: CERTIFICATE MANAGEMENT (3 Pages)
+Page 9: Certificate Vault (/certificates)
+Purpose: Central certificate management
+Features & Functionality:
+
+Certificate Dashboard:
+
+Total certificates count
+Certificates expiring in <30 days (red alert)
+Certificates expiring in 30-90 days (yellow warning)
+Certificates valid >90 days (green)
+
+
+Certificate List Table:
+
+Columns:
+
+Certificate Name / Subject DN
+Owner (Your Organization / Partner Name)
+Type (Encryption / Signing / Both)
+Issuer
+Valid From → Valid To
+Days Until Expiry (color-coded: 🟢 >90, 🟡 30-90, 🔴 <30)
+Status (Active / Archived / Revoked)
+Actions (View, Download, Replace, Archive)
+
+
+
+
+Filters:
+
+Owner filter (dropdown: Your Certs / Partner Certs / All)
+Type filter (Encryption / Signing / Both)
+Status filter (Active / Expiring Soon / Expired / All)
+Search by certificate name or partner
+
+
+Bulk Actions:
+
+Select multiple certificates
+Bulk download (ZIP file)
+Bulk archive (confirmation required)
+
+
+Upload New Certificate Button:
+
+Opens modal:
+
+Certificate owner selection (dropdown of partners)
+Certificate type (Encryption / Signing)
+File upload
+Auto-validation and import
+
+
+
+
+
+Database Tables Used:
+
+certificates table (cert_id, partner_id, cert_type, subject_dn, issuer_dn, valid_from, valid_to, status, file_path)
+partners table (join to get partner names)
+
+API Calls:
+
+GET /api/v1/certificates?owner=all&status=active&expiring_in=30
+POST /api/v1/certificates/upload
+PUT /api/v1/certificates/{certId}/archive
+GET /api/v1/certificates/{certId}/download
+
+
+Page 10: Your Certificates (/certificates/self)
+Purpose: Manage your organization's own certificates
+Features & Functionality:
+
+Current Signing Certificate:
+
+Certificate details display
+Subject DN (your AS2 ID)
+Issuer
+Key size (e.g., 3072-bit RSA)
+Valid from / to dates
+Expiry countdown
+Private key status: ✅ Stored securely in AWS KMS
+Download public certificate button (for sharing with partners)
+
+
+Current Encryption Certificate:
+
+Same details as signing certificate
+
+
+Certificate Actions:
+
+Generate Certificate Signing Request (CSR) button
+
+Opens modal with CSR generation form
+Fields: Common Name (AS2 ID), Organization, Country, Key Size
+Generate button → downloads .csr file
+Instructions: "Submit this CSR to your Certificate Authority"
+
+
+Import New Certificate button
+
+Opens upload modal
+Upload signed certificate from CA
+Upload private key (if external)
+System validates and imports to AWS KMS
+
+
+Schedule Certificate Rotation button
+
+Opens rotation scheduler
+Select rotation date (must be before expiry)
+Enable auto-notification (30/15/7 days before)
+Assign responsible user
+
+
+
+
+Certificate History:
+
+Timeline view of past certificates
+Shows rotation dates
+Download historical certificates
+
+
+
+Database Tables Used:
+
+certificates table (where partner_id IS NULL or owner_type = 'self')
+certificate_rotation_schedule table
+audit_logs table
+
+API Calls:
+
+GET /api/v1/certificates/self
+POST /api/v1/certificates/self/generate-csr
+POST /api/v1/certificates/self/import
+POST /api/v1/certificates/self/schedule-rotation
+
+Backend Integrations:
+
+AWS KMS: Store and manage private keys
+AWS CloudHSM: For FIPS 140-2 Level 3 compliance (optional)
+
+
+Page 11: Certificate Detail View (/certificates/{certId})
+Purpose: Deep dive into single certificate
+Features & Functionality:
+
+Full certificate details display:
+
+Version
+Serial Number
+Signature Algorithm
+Subject DN (full distinguished name)
+Issuer DN
+Valid From / Valid To (with timezone)
+Public Key Algorithm
+Key Size
+Fingerprint (SHA-256)
+Extensions (Key Usage, Extended Key Usage, etc.)
+
+
+Certificate chain visualization (if applicable):
+
+Root CA → Intermediate CA → End Entity Certificate
+
+
+Usage information:
+
+Partners using this certificate (list)
+Messages signed/encrypted with this certificate (count)
+Last used timestamp
+
+
+Certificate validation status:
+
+✅ Not expired
+✅ Key strength adequate (≥2048 bits)
+✅ Signature valid
+⚠️ Expiring in <30 days (warning)
+
+
+Actions:
+
+Download certificate (PEM format)
+Download certificate (DER format)
+View raw certificate (Base64)
+Replace certificate
+Revoke certificate (confirmation required)
+Archive certificate
+
+
+
+Database Tables Used:
+
+certificates table
+certificate_usage table (tracks which partners use this cert)
+messages table (count messages using this cert)
+
+API Calls:
+
+GET /api/v1/certificates/{certId}
+GET /api/v1/certificates/{certId}/usage
+PUT /api/v1/certificates/{certId}/revoke
+
+
+SECTION 4: FILE TRANSMISSION (4 Pages)
+Page 12: Send File (/send)
+Purpose: Manual file upload and send
+Features & Functionality:
+
+Step 1: Select Partner
+
+Dropdown list of active partners
+Shows partner AS2 ID and organization type
+Filter/search within dropdown
+Display partner's certificate status (warning if expiring soon)
+
+
+Step 2: Upload File
+
+Drag-and-drop zone (accepts .xml files)
+Or "Browse Files" button
+File validation:
+
+✅ File extension is .xml
+✅ File size <100 MB
+⚠️ Quick XSD validation (optional, can skip)
+
+
+File preview panel:
+
+Filename
+File size
+Quick metadata extraction (if E2B(R3): sender ID, case IDs)
+
+
+
+
+Step 3: Configure Message
+
+Message subject line (auto-populated from partner template, editable)
+Priority dropdown (Normal / Urgent)
+Optional message notes (textarea)
+Delivery options:
+
+Request signed MDN (checkbox, default: yes)
+MDN delivery method (sync/async)
+
+
+
+
+Step 4: Review and Send
+
+Summary panel:
+
+Partner: [Partner Name]
+File: [filename.xml]
+Priority: [Normal/Urgent]
+Encryption: AES-256
+Signing: SHA-256
+Estimated send time: ~5 seconds
+
+
+Send Button (prominent, primary color)
+Loading spinner while sending
+
+
+Step 5: Confirmation
+
+Success modal:
+
+✅ Message sent successfully!
+Message-ID: MSG-20251012-101530-XYZ
+Sent to: [Partner Name]
+Status: Awaiting MDN
+Timestamp: 2025-10-12 10:15:30 UTC
+
+
+Buttons:
+
+View in Outbox
+Send Another File
+Download Receipt
+
+
+
+
+
+Database Tables Used:
+
+messages table (insert new outbound message)
+partners table (get partner configuration)
+message_metadata table (store E2B metadata)
+audit_logs table
+
+API Calls:
+
+GET /api/v1/partners?status=active (populate dropdown)
+POST /api/v1/messages/send (multipart form data)
+
+json  {
+    "partner_id": "partner-123",
+    "file": "[binary data]",
+    "subject": "ICSR Submission",
+    "priority": "normal",
+    "notes": "Q4 submission batch 1"
+  }
+
+Response:
+
+json  {
+    "message_id": "MSG-20251012-101530-XYZ",
+    "status": "sent",
+    "sent_at": "2025-10-12T10:15:30Z",
+    "awaiting_mdn": true
+  }
+Backend Integrations:
+
+AWS S3: Upload file to outbox bucket
+AWS Transfer Family: Trigger AS2 send
+AWS Lambda: File validation, metadata extraction
+AWS SES: Send confirmation email (optional)
+
+
+Page 13: Batch Upload (/send/batch)
+Purpose: Send multiple files to one or more partners
+Features & Functionality:
+
+Batch Upload Zone:
+
+Drag-and-drop multiple files
+Or "Browse Files" button (multi-select)
+File list table:
+
+Columns: Filename, Size, Partner Assignment, Priority, Status, Actions
+
+
+Max 100 files per batch
+
+
+Partner Assignment:
+
+Option 1: Assign all files to same partner (dropdown at top)
+Option 2: Assign individually (dropdown per file in table)
+Option 3: Auto-assign based on filename pattern (regex rules)
+
+
+Bulk Actions:
+
+Set priority for all (Normal/Urgent)
+Remove selected files
+Clear all
+
+
+Validation Panel:
+
+Real-time validation status per file:
+
+✅ Valid (filename, size, partner assigned)
+⚠️ Warning (partner certificate expiring soon)
+❌ Error (no partner assigned, invalid file type)
+
+
+Error summary count
+
+
+Queue Preview:
+
+Total files: 47
+Total size: 23.5 MB
+Estimated send time: ~3 minutes
+Partners involved: 5
+
+
+Start Batch Send Button:
+
+Confirmation modal: "Send 47 files to 5 partners?"
+Progress bar (updates in real-time)
+Live status updates:
+
+
+
+    Sending file 1 of 47...
+    ✅ File 1 sent successfully (MDN received)
+    Sending file 2 of 47...
+    ✅ File 2 sent successfully (MDN received)
+    ...
+
+Pause/Resume/Cancel buttons
+Completion Summary:
+
+✅ Successful: 45 files
+❌ Failed: 2 files
+Failed files list (with retry option)
+Download batch report (CSV)
+
+
+
+Database Tables Used:
+
+batch_uploads table (batch_id, user_id, total_files, status, created_at)
+batch_files table (batch_id, file_id, filename, partner_id, status, message_id)
+messages table (one record per file sent)
+
+API Calls:
+
+POST /api/v1/batches/create (initialize batch)
+POST /api/v1/batches/{batchId}/upload (upload files)
+POST /api/v1/batches/{batchId}/send (start sending)
+GET /api/v1/batches/{batchId}/status (WebSocket for real-time updates)
+
+Backend Integrations:
+
+AWS S3: Batch file upload
+AWS Step Functions: Orchestrate batch send workflow
+AWS Lambda: Process files sequentially
+AWS EventBridge: Track progress events
+WebSocket API: Real-time progress updates to UI
+
+
+Page 14: Outbox (/outbox)
+Purpose: Track all sent messages
+Features & Functionality:
+
+Message List Table:
+
+Columns:
+
+Status Icon (⏳/✅/❌/⚠️)
+Message ID
+Recipient (Partner Name)
+Filename
+Sent At (timestamp, sortable)
+MDN Status (✅ Received / ⏳ Awaiting / ❌ Timeout)
+ACK2 Status (✅ Accepted / ⏳ Pending / ❌ Rejected)
+Actions (View Details, Download, Resend)
+
+
+
+
+Status Indicators:
+
+⏳ Sending (grey) - In progress
+✅ MDN Received (green) - ACK1 confirmed
+✅ Business ACK Received (dark green) - ACK2 confirmed
+❌ Failed (red) - Send error
+⚠️ MDN Timeout (orange) - No MDN after 15 min
+⚠️ ACK2 Rejected (orange) - Partner rejected file
+
+
+Filters:
+
+Partner dropdown (multi-select)
+Date range picker (preset: Today, Last 7 days, Last 30 days, Custom)
+Status multi-select (all status types)
+Priority filter (Normal/Urgent)
+Search by filename or Message ID
+
+
+Sorting:
+
+Click any column header to sort
+Default: Sent At (descending - newest first)
+
+
+Pagination:
+
+50 messages per page
+Page navigation (1, 2, 3... Next)
+
+
+Bulk Actions:
+
+Select multiple messages
+Bulk download (ZIP file)
+Bulk resend (for failed messages)
+Bulk export (CSV report)
+
+
+Auto-Refresh:
+
+WebSocket connection updates table every 10 seconds
+Visual indicator: "Last updated: 5 seconds ago"
+Manual refresh button
+
+
+
+Database Tables Used:
+
+messages table (WHERE direction = 'outbound')
+mdn_receipts table (ACK1 status)
+business_acks table (ACK2 status)
+partners table (join for partner names)
+
+API Calls:
+
+GET /api/v1/messages/outbox?page=1&limit=50&partner_id=123&status=sent&date_from=2025-10-01
+POST /api/v1/messages/{messageId}/resend
+GET /api/v1/messages/outbox/export?format=csv
+
+UI Components:
+
+Advanced data table (sortable, filterable)
+Real-time status badges
+Context menu for quick actions
+Export modal with format selection
+
+
+Page 15: Outbox Message Detail (/outbox/{messageId})
+Purpose: Deep dive into sent message
+Features & Functionality:
+Section 1: Message Overview
+
+Message ID (copyable)
+Status badge (current status)
+Partner name and AS2 ID
+Sent timestamp (with timezone)
+Original filename
+File size
+Message subject
+Priority indicator
+User who sent (name + email)
+
+Section 2: AS2 Transmission Details
+
+Your AS2 ID (AS2-From)
+Partner AS2 ID (AS2-To)
+Partner endpoint URL
+Encryption algorithm used (e.g., AES-256-CBC)
+Signing algorithm used (e.g., SHA-256)
+Compression (Yes/No, algorithm if yes)
+Content-Type
+Full AS2 headers (collapsible section)
+
+Section 3: MDN (ACK1) Information
+
+MDN Status: ✅ Received / ⏳ Awaiting / ❌
+RetrySContinueSECTION 4: FILE TRANSMISSION (Continued)
+Page 15: Outbox Message Detail (/outbox/{messageId}) - Continued
+Section 3: MDN (ACK1) Information (continued)
+
+MDN Status: ✅ Received / ⏳ Awaiting / ❌ Timeout
+MDN Received At: 2025-10-12 10:15:32 UTC (2 seconds after send)
+MDN Disposition: automatic-action/MDN-sent-automatically; processed
+MDN Signature Status: ✅ Verified / ❌ Invalid
+MIC (Message Integrity Check):
+
+Sent MIC: aB3xK9mP2qR7sT4u...
+Received MIC: aB3xK9mP2qR7sT4u...
+Match Status: ✅ Matched / ❌ Mismatch
+
+
+MDN Message-ID
+Download MDN button (downloads raw MDN file)
+
+Section 4: Business ACK (ACK2) Information
+
+ACK2 Status: ✅ Accepted / ⏳ Pending / ❌ Rejected / ⚠️ Not Required
+ACK2 Received At: 2025-10-12 10:18:45 UTC
+Processing Status: Accepted by [Partner System Name]
+Business validation results (if available)
+Rejection reason (if rejected):
+
+Error code
+Error message
+Validation failures list
+
+
+Download ACK2 button
+
+Section 5: File Details
+
+Original filename
+File size
+SHA-256 hash of original file
+E2B(R3) Metadata (if applicable):
+
+Sender Safety Report Unique Identifier
+Message Number
+Sender Organization
+Case ID(s)
+Transmission Date
+
+
+Download original file button
+View file content button (opens XML viewer modal)
+
+Section 6: Timeline
+Visual timeline showing:
+10:15:30 ━━ File uploaded by John Doe
+10:15:31 ━━ File encrypted with partner certificate
+10:15:32 ━━ File signed with private key
+10:15:32 ━━ AS2 message sent to partner endpoint
+10:15:32 ━━ HTTP 200 OK received from partner
+10:15:32 ━━ MDN received (synchronous)
+10:15:33 ━━ MDN signature verified ✅
+10:15:33 ━━ MIC verified ✅
+10:15:33 ━━ Transmission marked as successful
+10:18:45 ━━ Business ACK (ACK2) received
+10:18:45 ━━ ACK2 Status: ACCEPTED by FDA FAERS
+10:18:45 ━━ Message lifecycle complete ✅
+Section 7: Troubleshooting Info (if any issues)
+
+Error logs (if send failed)
+Retry attempts (count and timestamps)
+System recommendations
+Contact partner button (opens email draft)
+
+Actions Panel (Top Right):
+
+Resend Message button
+Download All Files (ZIP: original file + MDN + ACK2)
+Export Message Report (PDF)
+Delete Message (confirmation required)
+Copy Message ID button
+
+Database Tables Used:
+
+messages table (main message record)
+as2_headers table (full AS2 headers)
+mdn_receipts table (MDN details)
+business_acks table (ACK2 details)
+message_timeline table (event timestamps)
+message_errors table (if errors occurred)
+
+API Calls:
+
+GET /api/v1/messages/{messageId}
+GET /api/v1/messages/{messageId}/timeline
+GET /api/v1/messages/{messageId}/download-file
+GET /api/v1/messages/{messageId}/download-mdn
+POST /api/v1/messages/{messageId}/resend
+GET /api/v1/messages/{messageId}/report.pdf
+
+
+SECTION 5: FILE RECEPTION (3 Pages)
+Page 16: Inbox (/inbox)
+Purpose: Track all received messages
+Features & Functionality:
+
+Message List Table:
+
+Columns:
+
+Status Icon (🆕/✅/⚠️/❌)
+Message ID
+From (Partner Name)
+Filename
+Received At (timestamp, sortable)
+File Size
+Validation Status (✅ Passed / ⚠️ Failed / ⏳ Processing)
+Routing Status (✅ Routed / ⏳ Pending / ❌ Failed)
+Actions (View Details, Download, Re-validate)
+
+
+
+
+Status Indicators:
+
+🆕 New/Unprocessed (blue) - Just received, validation pending
+✅ Validated (green) - Passed all validation checks
+⚠️ Validation Failed (orange) - XSD or business rule errors
+📦 Routed to System (purple) - Successfully sent to Veeva/Argus
+❌ Processing Error (red) - System error during processing
+
+
+Filters:
+
+Partner dropdown (multi-select)
+Date range picker (Today, Last 7 days, Last 30 days, Custom)
+Status multi-select (all status types)
+Validation status (Passed/Failed/Pending)
+Routing status (Routed/Pending/Failed)
+Search by filename or Message ID
+
+
+Sorting:
+
+Click column headers to sort
+Default: Received At (descending - newest first)
+
+
+Auto-Refresh:
+
+WebSocket connection updates every 10 seconds
+Visual notification badge when new message arrives
+Browser notification (if enabled): "New ICSR received from Pfizer"
+
+
+Bulk Actions:
+
+Select multiple messages
+Bulk download (ZIP file)
+Bulk re-validate (for failed validations)
+Bulk re-route (retry routing to target system)
+Bulk export metadata (CSV)
+
+
+Quick Stats Panel (Top):
+
+New messages today: 23
+Validation failures today: 2
+Awaiting routing: 5
+Total received this month: 847
+
+
+
+Database Tables Used:
+
+messages table (WHERE direction = 'inbound')
+validation_results table (validation status)
+routing_status table (routing to downstream systems)
+partners table (join for partner names)
+
+API Calls:
+
+GET /api/v1/messages/inbox?page=1&limit=50&partner_id=123&status=new&date_from=2025-10-01
+POST /api/v1/messages/bulk-validate (body: array of message IDs)
+POST /api/v1/messages/bulk-route (body: array of message IDs, target system)
+GET /api/v1/messages/inbox/export?format=csv
+
+WebSocket Events:
+
+new_message_received - triggers table refresh and notification
+validation_completed - updates validation status in real-time
+routing_completed - updates routing status
+
+UI Components:
+
+Real-time data table with virtual scrolling (performance optimization)
+Toast notifications for new messages
+Color-coded status badges
+Inline action buttons
+Expandable row details (quick preview without navigating away)
+
+
+Page 17: Inbox Message Detail (/inbox/{messageId})
+Purpose: Deep dive into received message
+Features & Functionality:
+Section 1: Message Overview
+
+Message ID (copyable)
+Status badge (current status)
+From Partner (name + AS2 ID)
+Received timestamp (with timezone)
+Original filename
+File size
+Message subject
+MDN Sent: ✅ Yes (Signed) / ❌ No
+MDN Sent At: 2025-10-12 09:45:25 UTC
+
+Section 2: Security Verification
+
+Decryption Status: ✅ Successful / ❌ Failed
+
+Encryption algorithm: AES-256-CBC
+Certificate used: [Certificate Subject DN]
+Certificate expiry: 2026-03-15 (valid)
+
+
+Signature Verification: ✅ Verified / ❌ Invalid
+
+Signing algorithm: SHA-256
+Signer certificate: [Certificate Subject DN]
+Certificate chain: Valid
+
+
+MIC Verification: ✅ Match / ❌ Mismatch
+
+Calculated MIC: zX9yK2mW1pQ...
+Partner sent MIC: zX9yK2mW1pQ...
+
+
+Security warnings (if any):
+
+⚠️ Certificate expires in 25 days
+⚠️ Weak signature algorithm (SHA-1) - recommend upgrading
+
+
+
+Section 3: AS2 Transmission Details
+
+Partner AS2 ID (AS2-From)
+Your AS2 ID (AS2-To)
+Partner's sending endpoint IP: 203.0.113.45
+Compression: Yes (ZLIB)
+Content-Type: application/pkcs7-mime
+Full AS2 headers (collapsible, formatted JSON view)
+
+Section 4: File Validation Results
+E2B(R3) XSD Validation:
+
+Status: ✅ PASSED / ❌ FAILED
+Validator: FDA E2B(R3) Schema v3.2
+Validation time: 0.3 seconds
+If failed:
+
+Error count: 3
+Errors list:
+
+
+
+    Line 45: Element 'sender' is missing required child 'senderOrganization'
+    Line 67: Invalid date format in 'receiptDate' - expected ISO 8601
+    Line 89: Invalid code value 'XYZ' in 'reportType' - not in code list
+Code List Validation:
+
+Status: ✅ PASSED / ⚠️ WARNINGS
+ICH code lists checked: MedDRA, WHODrug, ISO Country Codes
+Warnings (if any):
+
+⚠️ MedDRA code '10012345' is deprecated, use '10067890' instead
+
+
+
+Business Rule Validation:
+
+Status: ✅ PASSED / ❌ FAILED
+Rules checked: 47
+Passed: 45
+Failed: 2
+
+Rule BR-001: Sender organization must be authorized MAH - FAILED
+Rule BR-012: Report must contain at least one suspected drug - FAILED
+
+
+
+FDA Validator Results (if applicable):
+
+Status: ✅ ACCEPTED / ❌ REJECTED
+Validation report link
+FDA tracking number (if accepted)
+
+Section 5: Processing History Timeline
+09:45:23 ━━ File received from Pfizer via AS2
+09:45:24 ━━ Decryption started
+09:45:24 ━━ Decryption successful (AES-256)
+09:45:24 ━━ Signature verification started
+09:45:25 ━━ Signature verified ✅ (SHA-256)
+09:45:25 ━━ Signed MDN sent back to partner
+09:45:26 ━━ File stored in S3: s3://inbox/pfizer/...
+09:45:26 ━━ XSD validation started
+09:45:28 ━━ XSD validation PASSED ✅
+09:45:28 ━━ Code list validation started
+09:45:29 ━━ Code list validation PASSED ✅
+09:45:29 ━━ Business rule validation started
+09:45:30 ━━ Business rule validation PASSED ✅
+09:45:30 ━━ Routing to Veeva Vault Safety API started
+09:45:32 ━━ Veeva Vault API call successful
+09:45:32 ━━ Veeva confirmed receipt: Case ID VV-789123
+09:45:32 ━━ Processing complete ✅
+Section 6: Routing Information
+
+Target System: Veeva Vault Safety
+Routing Status: ✅ Successfully Routed / ❌ Failed
+Routed At: 2025-10-12 09:45:30 UTC
+Target System Case ID: VV-789123
+Target System Response:
+
+json  {
+    "status": "success",
+    "case_id": "VV-789123",
+    "message": "ICSR accepted and stored"
+  }
+
+If routing failed:
+
+Error message
+Retry attempts: 3 (max)
+Next retry: 2025-10-12 10:00:00 UTC
+Manual retry button
+
+
+
+Section 7: File Content
+
+Metadata Preview:
+
+Sender Safety Report Unique ID
+Sender Organization
+Receiver Organization
+Message Date
+Case IDs (list)
+Patient initials
+Reporter name
+Suspect products (list)
+
+
+Actions:
+
+View Full XML button (opens formatted XML viewer modal with syntax highlighting)
+Download Original File
+Download Decrypted File
+Download Validation Report (PDF)
+
+
+
+Section 8: Manual Actions Panel
+
+Re-validate File button (runs validation again)
+Re-route to Different System dropdown + button:
+
+Options: Veeva Vault / Oracle Argus / Custom API
+Confirmation modal before re-routing
+
+
+Notify Partner button:
+
+Opens email draft with validation results
+Pre-populated recipient (partner contact email)
+Attach validation report option
+
+
+Mark as Reviewed button (for compliance officer sign-off)
+Add Internal Note (textarea + save button)
+
+Actions Panel (Top Right):
+
+Download All Files (ZIP)
+Export Message Report (PDF)
+Archive Message
+Flag for Investigation (adds to special queue)
+
+Database Tables Used:
+
+messages table
+as2_headers table
+validation_results table
+routing_logs table
+message_timeline table
+message_notes table (internal notes)
+
+API Calls:
+
+GET /api/v1/messages/{messageId}
+GET /api/v1/messages/{messageId}/validation-details
+GET /api/v1/messages/{messageId}/timeline
+POST /api/v1/messages/{messageId}/re-validate
+POST /api/v1/messages/{messageId}/re-route (body: target_system)
+POST /api/v1/messages/{messageId}/notes (add internal note)
+GET /api/v1/messages/{messageId}/download-file
+GET /api/v1/messages/{messageId}/report.pdf
+
+
+Page 18: Message Center (Unified View) (/messages)
+Purpose: Single page showing ALL transactions (sent + received)
+Features & Functionality:
+
+Unified Message Table:
+
+Columns:
+
+Direction Icon (📤 Sent / 📥 Received)
+Status Icon (🆕/✅/⚠️/❌)
+Message ID
+Partner (To/From)
+Filename
+Timestamp (Sent At / Received At)
+File Size
+Overall Status (Success / Pending / Failed)
+Actions
+
+
+
+
+View Toggle (Top):
+
+Radio buttons: ⚫ All Messages | 📥 Received Only | 📤 Sent Only
+Default: All Messages
+
+
+Filters:
+
+Partner multi-select
+Direction (All / Sent / Received)
+Date range
+Status multi-select
+Search (filename or Message ID)
+
+
+Advanced Filter Panel (Collapsible):
+
+MDN status filter (Received / Awaiting / Timeout)
+Validation status (Passed / Failed / Pending)
+Routing status (Routed / Pending / Failed)
+Priority (Normal / Urgent)
+File size range
+
+
+Quick Summary Cards (Top):
+
+Total Messages Today: 156 (📤 89 sent, 📥 67 received)
+Success Rate: 97.8%
+Pending Actions: 5 (3 MDN timeouts, 2 validation failures)
+Active Partners: 12
+
+
+Export Options:
+
+Export current view (CSV / Excel)
+Date range selection
+Include detailed status (checkbox)
+
+
+Bulk Actions:
+
+Select multiple messages across directions
+Bulk download files
+Bulk export reports
+
+
+
+Database Tables Used:
+
+messages table (both inbound and outbound)
+partners table
+validation_results table
+mdn_receipts table
+routing_status table
+
+API Calls:
+
+GET /api/v1/messages?direction=all&page=1&limit=50&date_from=2025-10-01
+GET /api/v1/messages/stats?date=today
+GET /api/v1/messages/export?format=csv&direction=all
+
+UI Components:
+
+Unified data table with direction indicators
+Real-time updates via WebSocket
+Color-coded status system consistent across both directions
+Context-aware actions (different actions for sent vs received)
+
+
+SECTION 6: MONITORING & OBSERVABILITY (4 Pages)
+Page 19: Transmission Dashboard (/monitoring)
+Purpose: Real-time operational metrics
+Features & Functionality:
+Section 1: Key Metrics Cards (Top Row)
+
+Messages Sent (Last 24 Hours)
+
+Large number: 234
+Trend indicator: ↑ 12% vs yesterday
+Mini line chart (sparkline)
+
+
+Messages Received (Last 24 Hours)
+
+Large number: 189
+Trend indicator: ↓ 3% vs yesterday
+Mini line chart
+
+
+Success Rate
+
+Large number: 98.5%
+Trend indicator: ↑ 0.8% vs last week
+Color: Green if >95%, Yellow if 90-95%, Red if <90%
+
+
+Average MDN Receipt Time
+
+Large number: 2.3 seconds
+Trend indicator: → Same as yesterday
+Color: Green if <5s, Yellow if 5-15s, Red if >15s
+
+
+Failed Transmissions Requiring Attention
+
+Large number: 7
+Red alert badge
+Click → jumps to failures section
+
+
+
+Section 2: Message Volume Chart
+
+Line graph showing message count over time
+Time range selector: Last 24 Hours / Last 7 Days / Last 30 Days / Custom
+Dual Y-axis:
+
+Left axis: Sent messages (blue line)
+Right axis: Received messages (green line)
+
+
+Hover tooltip shows exact counts per time period
+Interactive: Click data point → filters table below to that time period
+
+Section 3: Success vs Failure Rate
+
+Donut chart showing:
+
+✅ Successful: 98.5% (230 messages)
+❌ Failed: 1.5% (4 messages)
+
+
+Legend with click-to-filter
+Center text: "98.5% Success"
+
+Section 4: MDN Receipt Time Distribution
+
+Histogram chart showing:
+
+X-axis: Time buckets (0-5s, 5-10s, 10-15s, 15-30s, >30s)
+Y-axis: Message count
+Color gradient: Green → Yellow → Orange → Red
+
+
+Shows performance distribution
+Identifies outliers (messages with slow MDN)
+
+Section 5: Top Partners by Volume
+
+Horizontal bar chart showing:
+
+Top 10 partners by message count (sent + received combined)
+Click bar → filters all data to that partner
+
+
+
+Section 6: Recent Failures Table
+
+Shows messages requiring attention
+Columns:
+
+Message ID
+Partner
+Timestamp
+Failure Type (MDN Timeout / Send Error / Validation Failed)
+Actions (Retry / View Details / Contact Partner)
+
+
+Max 20 failures shown
+Link to full failures report
+
+Section 7: System Health Indicators
+
+AWS Transfer Family Status: ✅ Operational
+S3 Bucket Connectivity: ✅ Healthy
+Lambda Functions: ✅ All running
+Database: ✅ Connected (latency: 12ms)
+Certificate Status: ⚠️ 2 expiring in <30 days
+Last health check: 30 seconds ago (auto-refresh every 1 minute)
+
+Section 8: Live Activity Feed
+
+Real-time scrolling feed showing:
+
+  10:45:32 - 📤 Message sent to FDA ESG (MSG-001)
+  10:45:30 - 📥 Message received from Pfizer (MSG-002)
+  10:45:28 - ✅ MDN received for MSG-003
+  10:45:25 - ⚠️ Validation failed for MSG-004
+
+Auto-scrolls, shows last 50 events
+Pause button to stop auto-scroll
+
+Time Range Selector (Global):
+
+Affects all charts and metrics
+Options: Last Hour / Last 24 Hours / Last 7 Days / Last 30 Days / Custom Range
+
+Export Options:
+
+Export Dashboard Report (PDF snapshot)
+Export Metrics (CSV with time-series data)
+Schedule Email Reports (daily/weekly)
+
+Database Tables Used:
+
+messages table (aggregated by status, time)
+mdn_receipts table (MDN timing calculations)
+system_health table (health check results)
+message_errors table (failure analysis)
+
+API Calls:
+
+GET /api/v1/monitoring/stats?range=24h
+GET /api/v1/monitoring/message-volume?range=7d
+GET /api/v1/monitoring/success-rate?range=30d
+GET /api/v1/monitoring/mdn-distribution?range=24h
+GET /api/v1/monitoring/top-partners?limit=10
+GET /api/v1/monitoring/recent-failures?limit=20
+GET /api/v1/monitoring/health-status
+WebSocket: /ws/monitoring/live-feed
+
+Backend Integrations:
+
+AWS CloudWatch: Metrics and logs
+AWS X-Ray: Distributed tracing
+Custom metrics aggregation (Lambda scheduled every 5 minutes)
+
+
+Page 20: MDN/ACK Reconciliation View (/monitoring/reconciliation)
+Purpose: Critical compliance tracking - ensure all messages properly acknowledged
+Features & Functionality:
+Section 1: Reconciliation Summary Cards
+
+Total Messages Sent (Last 30 Days): 6,847
+MDN Received (ACK1): 6,832 (99.8%)
+Business ACK Received (ACK2): 6,789 (99.2%)
+Pending ACK2: 43 messages (⚠️ review required)
+MDN Timeout: 15 messages (❌ urgent action)
+MIC Mismatch: 2 messages (❌ critical error)
+
+Section 2: Reconciliation Status Filter
+
+Radio buttons:
+
+⚫ All Messages
+⚠️ Pending ACK2 Only
+❌ MDN Timeout Only
+❌ ACK2 Rejections Only
+❌ MIC Mismatches Only
+✅ Fully Acknowledged Only
+
+
+
+Section 3: Reconciliation Table
+
+Columns:
+
+Message ID (copyable)
+Partner
+Filename
+Sent At
+ACK1 (MDN) Status:
+
+✅ Received (timestamp, time taken)
+❌ Timeout (time elapsed, auto-retry count)
+⚠️ MIC Mismatch (highlight in red)
+
+
+ACK2 (Business ACK) Status:
+
+✅ Accepted (timestamp, processing time)
+⏳ Pending (time elapsed since MDN)
+❌ Rejected (rejection reason)
+➖ Not Required (some partners don't send ACK2)
+
+
+Discrepancy Flag:
+
+🚨 Red if MDN timeout
+🚨 Red if MIC mismatch
+⚠️ Orange if ACK2 pending >24 hours
+⚠️ Orange if ACK2 rejected
+
+
+Actions (View Details / Retry / Contact Partner)
+
+
+
+Section 4: Detailed Discrepancy Panel (Expandable Row)
+
+Click row to expand details:
+
+MDN Details:
+
+Sent MIC: aB3xK9mP...
+Received MIC: aB3xK9mP... (or different if mismatch)
+MDN disposition: processed/error/warning
+MDN signature status
+
+
+ACK2 Details:
+
+Expected ACK2 by: 2025-10-12 11:00:00 UTC
+Time since MDN: 2 hours 15 minutes
+ACK2 rejection reason (if rejected):
+
+Error code: E2B-VAL-003
+Error message: "Invalid sender organization code"
+
+
+
+
+Recommended Actions:
+
+For MDN timeout: [Retry Send] [Contact Partner IT] [Escalate]
+For MIC mismatch: [Verify File Integrity] [Resend] [Escalate to Security]
+For pending ACK2 >24h: [Send Reminder] [Contact Partner] [Escalate]
+For ACK2 rejection: [Review Rejection] [Fix & Resend] [Contact Partner]
+
+
+
+
+
+Section 5: Reconciliation Charts
+
+Pie Chart: ACK1 Status Distribution
+
+✅ Received: 99.8%
+❌ Timeout: 0.2%
+
+
+Pie Chart: ACK2 Status Distribution
+
+✅ Accepted: 99.2%
+⏳ Pending: 0.6%
+❌ Rejected: 0.2%
+
+
+Line Chart: ACK2 Processing Time Trend
+
+Shows average time from MDN to ACK2 over last 30 days
+Helps identify partner processing delays
+
+
+
+Section 6: Partner-Specific Reconciliation
+
+Partner dropdown filter
+Shows reconciliation stats for selected partner only:
+
+MDN success rate: 100%
+ACK2 success rate: 98.5%
+Average ACK2 processing time: 8 minutes
+Current pending ACK2: 3 messages
+
+
+Export partner reconciliation report (PDF)
+
+Section 7: Automated Alerts Configuration
+
+Configure alert rules:
+
+Alert if MDN not received within: [15] minutes
+Alert if ACK2 not received within: [24] hours
+Alert if MIC mismatch detected: [Immediately]
+Send alerts to: [email addresses, comma-separated]
+Alert via: Email ☑️ | SMS ☑️ | Slack ☑️
+
+
+
+Section 8: Compliance Export
+
+Export full reconciliation report for regulatory submission
+Date range selector
+Format: PDF / Excel / CSV
+Includes:
+
+All message transmission records
+MDN receipts
+ACK2 receipts
+Discrepancy details
+Audit trail
+
+
+Signed and timestamped export (for legal/compliance purposes)
+
+Database Tables Used:
+
+messages table
+mdn_receipts table
+business_acks table
+mic_verifications table
+reconciliation_alerts table
+
+API Calls:
+
+GET /api/v1/monitoring/reconciliation?status=all&date_from=2025-09-12
+GET /api/v1/monitoring/reconciliation/stats
+GET /api/v1/monitoring/reconciliation/partner/{partnerId}
+POST /api/v1/monitoring/reconciliation/retry (body: message_id)
+POST /api/v1/monitoring/reconciliation/alert-config (update alert rules)
+GET /api/v1/monitoring/reconciliation/export?format=pdf&date_range=last_30_days
+
+Automated Background Jobs:
+
+Scheduled Lambda (runs every 15 minutes):
+
+Check for MDN timeouts
+Check for delayed ACK2 (>24 hours)
+Check for MIC mismatches
+Send alerts to configured recipients
+Update reconciliation dashboard metrics
+
+
+
+
+Page 21: Alerts & Notifications (/alerts)
+Purpose: Centralized alert management
+Features & Functionality:
+Section 1: Active Alerts Panel (Top)
+
+Shows current critical alerts requiring immediate action
+Alert cards with severity color:
+
+🔴 CRITICAL (red background):
+
+2 MIC mismatches detected
+1 certificate expired
+
+
+🟠 HIGH (orange):
+
+5 MDN timeouts
+3 certificates expiring in <7 days
+
+
+🟡 MEDIUM (yellow):
+
+12 ACK2 pending >24 hours
+5 validation failures
+
+
+🔵 INFO (blue):
+
+System maintenance scheduled
+New partner added
+
+
+
+
+Each alert card shows:
+
+Alert title
+Timestamp (when triggered)
+Affected entity (partner, message, certificate)
+Quick action buttons (View / Acknowledge / Dismiss / Escalate)
+
+
+
+Section 2: Alert Types Filter
+
+Checkbox filters:
+
+☑️ MDN Timeouts
+☑️ Certificate Expiry Warnings
+☑️ Validation Failures
+☑️ System Errors
+☑️ Security Alerts
+☑️ Partner Connection Issues
+☑️ Business ACK Rejections
+☑️ MIC Mismatches
+☑️ System Maintenance
+☑️ Informational
+
+
+
+Section 3: Alert Status Filter
+
+Radio buttons:
+
+⚫ Active Alerts Only
+Acknowledged Alerts
+Dismissed Alerts
+All Alerts
+
+
+
+Section 4: Alert History Table
+
+Columns:
+
+Severity (icon + color badge)
+Alert Type
+Alert Message
+Triggered At
+Affected Entity (link to relevant page)
+Status (Active / Acknowledged / Dismissed / Resolved)
+Acknowledged By (user)
+Acknowledged At
+Actions (View Details / Acknowledge / Dismiss / Escalate / Create Ticket)
+
+
+Sorting: Default by severity (Critical → Info) then by timestamp (newest first)
+Pagination: 50 alerts per page
+Search: Filter by alert message or affected entity
+
+Section 5: Alert Details Modal
+(Opens when clicking "View Details")
+
+Full alert information:
+
+Alert ID
+Alert type and severity
+Triggered at (timestamp)
+Alert description (detailed message)
+Affected entities:
+
+Message ID (if applicable)
+Partner name
+Certificate ID
+User (if applicable)
+
+
+Context data (JSON):
+
+
+
+json    {
+      "message_id": "MSG-001",
+      "partner_id": "partner-123",
+      "mdn_timeout_minutes": 20,
+      "retry_attempts": 3,
+      "last_retry_at": "2025-10-12T10:30:00Z"
+    }
+
+Alert history timeline:
+
+    10:15:30 - Alert triggered
+    10:20:00 - Auto-retry attempt 1 (failed)
+    10:25:00 - Auto-retry attempt 2 (failed)
+    10:30:00 - Auto-retry attempt 3 (failed)
+    10:35:00 - Alert escalated to HIGH severity
+    10:RetrySContinueSECTION 6: MONITORING & OBSERVABILITY (Continued)
+Page 21: Alerts & Notifications (/alerts) - Continued
+Section 5: Alert Details Modal (continued)
+
+Alert history timeline (continued):
+
+    10:35:00 - Alert escalated to HIGH severity
+    10:40:00 - Email notification sent to ops@company.com
+    10:45:00 - Alert acknowledged by John Doe
+    10:50:00 - Resolution action taken: Manual retry successful
+    10:51:00 - Alert resolved automatically
+
+Related alerts (if any)
+Recommended actions:
+
+Step-by-step troubleshooting guide
+Links to relevant documentation
+Contact support button
+
+
+Actions in modal:
+
+Acknowledge Alert (adds comment, marks as read)
+Dismiss Alert (requires reason dropdown)
+Escalate Alert (increase severity, notify additional users)
+Create Jira/ServiceNow Ticket (integration)
+Snooze Alert (select duration: 1h, 4h, 24h)
+
+
+
+Section 6: Alert Configuration Panel (/alerts/config)
+(Accessed via "Configure Alerts" button)
+Alert Rules Table:
+
+Columns:
+
+Alert Rule Name
+Alert Type
+Trigger Condition
+Severity
+Notification Channels
+Enabled (toggle switch)
+Actions (Edit / Duplicate / Delete)
+
+
+
+Pre-configured Alert Rules:
+
+MDN Timeout Alert
+
+Condition: MDN not received within [15] minutes
+Severity: HIGH
+Channels: Email ☑️, SMS ☐, Slack ☑️, PagerDuty ☐
+Recipients: ops@company.com, +1-555-0100
+Auto-retry: Yes (3 attempts, 5 min interval)
+Escalation: Increase to CRITICAL after 30 minutes
+
+
+Certificate Expiry Warning
+
+Condition: Certificate expires within [30] days
+Severity: MEDIUM (escalates to HIGH at 7 days)
+Channels: Email ☑️, Dashboard ☑️
+Recipients: security@company.com, admin@company.com
+Notification frequency: Weekly (then daily at 7 days)
+
+
+Certificate Expired Alert
+
+Condition: Certificate has expired
+Severity: CRITICAL
+Channels: Email ☑️, SMS ☑️, Slack ☑️, PagerDuty ☑️
+Recipients: All admins + security team
+Auto-disable: Disable affected partner automatically ☑️
+
+
+Validation Failure Alert
+
+Condition: E2B(R3) validation fails
+Severity: MEDIUM
+Channels: Email ☑️, Dashboard ☑️
+Recipients: compliance@company.com
+Notification frequency: Immediate (batch if >5 failures/hour)
+
+
+System Error Alert
+
+Condition: Lambda function error OR S3 connectivity error
+Severity: HIGH
+Channels: Email ☑️, SMS ☑️, PagerDuty ☑️
+Recipients: devops@company.com, oncall-engineer
+Auto-retry: System automatically retries
+Escalation: CRITICAL if error persists >15 minutes
+
+
+Security Alert - MIC Mismatch
+
+Condition: MIC verification fails
+Severity: CRITICAL
+Channels: Email ☑️, SMS ☑️, Security Dashboard ☑️
+Recipients: security@company.com, compliance@company.com
+Auto-action: Flag message for investigation, notify partner
+
+
+Business ACK Delayed
+
+Condition: ACK2 not received within [24] hours
+Severity: MEDIUM
+Channels: Email ☑️, Dashboard ☑️
+Recipients: ops@company.com
+Auto-action: Send reminder to partner
+
+
+High Volume Alert
+
+Condition: Message rate exceeds [500] messages/hour
+Severity: INFO
+Channels: Dashboard ☑️
+Purpose: Capacity planning notification
+
+
+Partner Connection Failure
+
+Condition: Unable to connect to partner endpoint (3 consecutive failures)
+Severity: HIGH
+Channels: Email ☑️, Slack ☑️
+Recipients: ops@company.com
+Auto-action: Disable partner temporarily, retry every 30 min
+
+
+Low Success Rate Alert
+
+Condition: Success rate drops below [95%] over 1 hour
+Severity: HIGH
+Channels: Email ☑️, SMS ☑️, Dashboard ☑️
+Recipients: ops@company.com, manager@company.com
+
+
+
+Section 7: Create New Alert Rule
+(Button: "+ Add Custom Alert Rule")
+
+Form fields:
+
+Rule Name (text input)
+Alert Type (dropdown: Custom / Pre-defined template)
+Trigger Condition:
+
+Metric dropdown (MDN timeout / Validation error / etc.)
+Operator (equals / greater than / less than / contains)
+Threshold value
+Time window (minutes/hours)
+
+
+Severity (dropdown: INFO / MEDIUM / HIGH / CRITICAL)
+Notification Channels (checkboxes):
+
+☑️ Email (enter addresses)
+☐ SMS (enter phone numbers)
+☑️ Slack (select channel)
+☐ PagerDuty (select service)
+☑️ In-app notification
+☐ Webhook (custom URL)
+
+
+Notification Frequency:
+
+Radio: Immediate / Batched (every X minutes) / Daily digest
+
+
+Auto-escalation rules:
+
+If not acknowledged within [30] minutes, escalate to [CRITICAL]
+Notify additional users: [select users]
+
+
+Auto-resolution:
+
+Auto-resolve when condition clears: Yes ☑️ / No ☐
+
+
+Actions:
+
+Run custom Lambda function (dropdown)
+Disable affected partner ☐
+Send notification to partner ☐
+
+
+
+
+
+Section 8: Notification Preferences (Per User)
+(Accessed via "My Notification Settings" button)
+
+User-specific settings:
+
+Email notifications: Enabled ☑️
+SMS notifications: Enabled ☐
+Push notifications (mobile app): Enabled ☑️
+Slack DM: Enabled ☑️
+Quiet hours: 10:00 PM - 7:00 AM (no non-critical alerts)
+Alert types I want to receive:
+
+☑️ All CRITICAL alerts
+☑️ HIGH alerts for my partners only
+☐ MEDIUM alerts
+☐ INFO alerts
+
+
+Notification frequency:
+
+Immediate for CRITICAL ☑️
+Batched digest for others (every 4 hours) ☑️
+
+
+
+
+
+Section 9: Alert Analytics
+
+Chart: Alerts Over Time
+
+Line graph showing alert count by severity (last 30 days)
+Helps identify trends
+
+
+Chart: Top Alert Types
+
+Bar chart showing most frequent alert types
+Click bar to filter alert history table
+
+
+Chart: Mean Time to Acknowledge (MTTA)
+
+Shows average time to acknowledge alerts by severity
+Target: <5 minutes for CRITICAL, <1 hour for HIGH
+
+
+Chart: Mean Time to Resolve (MTTR)
+
+Shows average time to resolve alerts
+Helps measure operational efficiency
+
+
+
+Section 10: Bulk Alert Actions
+
+Select multiple alerts (checkboxes)
+Bulk actions dropdown:
+
+Acknowledge Selected
+Dismiss Selected
+Export Selected (CSV)
+Mark as False Positive (creates suppression rule)
+
+
+
+Database Tables Used:
+
+alerts table (alert_id, alert_type, severity, message, triggered_at, status, acknowledged_by, acknowledged_at)
+alert_rules table (rule configuration)
+alert_notifications table (notification log)
+alert_history table (status changes timeline)
+user_notification_preferences table
+
+API Calls:
+
+GET /api/v1/alerts?status=active&severity=critical&type=mdn_timeout
+GET /api/v1/alerts/{alertId}
+PUT /api/v1/alerts/{alertId}/acknowledge (body: comment)
+PUT /api/v1/alerts/{alertId}/dismiss (body: reason)
+PUT /api/v1/alerts/{alertId}/escalate (body: new_severity, notify_users)
+GET /api/v1/alerts/rules
+POST /api/v1/alerts/rules (create new rule)
+PUT /api/v1/alerts/rules/{ruleId} (update rule)
+DELETE /api/v1/alerts/rules/{ruleId}
+GET /api/v1/alerts/analytics?range=30d
+POST /api/v1/alerts/bulk-action (body: action_type, alert_ids)
+WebSocket: /ws/alerts (real-time alert notifications)
+
+Backend Integrations:
+
+AWS SNS: Email/SMS notifications
+AWS EventBridge: Alert rule engine
+Slack API: Slack notifications
+PagerDuty API: Incident creation
+Twilio API: SMS delivery
+Custom webhook endpoints
+
+
+Page 22: System Health Dashboard (/monitoring/health)
+Purpose: Real-time system infrastructure monitoring
+Features & Functionality:
+Section 1: Overall System Status
+
+Large status indicator:
+
+🟢 ALL SYSTEMS OPERATIONAL
+🟡 PARTIAL OUTAGE (some services degraded)
+🔴 MAJOR OUTAGE (critical services down)
+
+
+Last updated: 15 seconds ago (auto-refresh every 30 seconds)
+Uptime this month: 99.94%
+
+Section 2: Service Status Grid
+AWS Transfer Family for AS2:
+
+Status: 🟢 Operational / 🟡 Degraded / 🔴 Down
+Endpoint health: ✅ Reachable
+Active connections: 24
+Messages processed (last hour): 127
+Last health check: 30 seconds ago
+Latency: 45ms (p50), 89ms (p95), 156ms (p99)
+Actions: [View CloudWatch Metrics] [View Logs]
+
+S3 Storage:
+
+Status: 🟢 Operational
+Buckets:
+
+s3://as2-inbox: ✅ Accessible (12.3 GB used)
+s3://as2-outbox: ✅ Accessible (8.7 GB used)
+s3://as2-archive: ✅ Accessible (456 GB used)
+
+
+Read latency: 12ms (p95)
+Write latency: 18ms (p95)
+Actions: [View S3 Console] [Check Bucket Policies]
+
+Lambda Functions:
+
+Status: 🟢 All running
+Functions monitored: 12
+Function list (collapsible):
+
+as2-file-validator: ✅ Healthy (50 invocations/hour, 0 errors)
+as2-message-router: ✅ Healthy (120 invocations/hour, 0 errors)
+as2-mdn-processor: ✅ Healthy (127 invocations/hour, 0 errors)
+as2-cert-validator: ✅ Healthy (5 invocations/hour, 0 errors)
+as2-health-checker: ✅ Healthy (runs every 1 min)
+(expand to see all 12)
+
+
+Aggregate metrics:
+
+Total invocations (last hour): 847
+Error rate: 0.1%
+Average duration: 234ms
+Throttles: 0
+
+
+Actions: [View CloudWatch Logs] [View X-Ray Traces]
+
+DynamoDB Tables:
+
+Status: 🟢 Operational
+Tables:
+
+messages: ✅ Healthy (read: 45 RCU, write: 23 WCU)
+partners: ✅ Healthy
+certificates: ✅ Healthy
+audit_logs: ✅ Healthy
+
+
+Latency: 6ms average query time
+Throttled requests: 0
+Actions: [View DynamoDB Console] [Check Capacity]
+
+API Gateway:
+
+Status: 🟢 Operational
+Endpoint: https://api.as2portal.example.com
+Requests (last hour): 3,456
+Error rate (5xx): 0.02%
+Latency: 78ms (p50), 145ms (p95)
+Cache hit rate: 67%
+Actions: [View API Logs] [View Usage Plans]
+
+EventBridge:
+
+Status: 🟢 Operational
+Rules active: 23
+Events processed (last hour): 892
+Failed invocations: 0
+Actions: [View Event Rules] [View Event History]
+
+Step Functions:
+
+Status: 🟢 Operational
+State machines: 5
+Executions (last hour): 127
+Failed executions: 0
+Average execution time: 3.2 seconds
+Actions: [View Executions] [View State Machines]
+
+AWS KMS (Key Management):
+
+Status: 🟢 Operational
+Keys managed: 8
+Decrypt operations (last hour): 127
+Sign operations (last hour): 234
+Latency: 12ms average
+Actions: [View KMS Console] [Check Key Policies]
+
+External Integrations:
+
+Veeva Vault Safety API:
+
+Status: 🟢 Reachable
+Last successful call: 2 minutes ago
+Success rate (24h): 99.8%
+Average response time: 456ms
+
+
+Oracle Argus API:
+
+Status: 🟢 Reachable
+Last successful call: 15 minutes ago
+Success rate (24h): 98.2%
+Average response time: 678ms
+
+
+FDA ESG Gateway:
+
+Status: 🟢 Reachable
+Last successful send: 5 minutes ago
+Success rate (24h): 99.5%
+
+
+EMA EudraVigilance:
+
+Status: 🟢 Reachable
+Last successful send: 8 minutes ago
+Success rate (24h): 99.3%
+
+
+
+Section 3: Performance Metrics
+
+CPU Utilization:
+
+Lambda: 34% average
+RDS (if used): 45% average
+
+
+Memory Utilization:
+
+Lambda functions: 512 MB average (out of 2048 MB allocated)
+
+
+Network Throughput:
+
+Inbound: 2.3 MB/s
+Outbound: 1.8 MB/s
+
+
+Error Rates:
+
+4xx errors (last hour): 12 (client errors)
+5xx errors (last hour): 1 (server errors)
+
+
+
+Section 4: Recent Incidents
+
+Table showing past incidents:
+
+Date/Time
+Incident Type (Outage / Degradation / Maintenance)
+Affected Services
+Duration
+Root Cause
+Status (Investigating / Identified / Monitoring / Resolved)
+Actions (View Details / View Postmortem)
+
+
+
+Section 5: Scheduled Maintenance
+
+Upcoming maintenance windows:
+
+Date: 2025-10-20 02:00-04:00 UTC
+Services Affected: AWS Transfer Family (rolling update)
+Impact: No downtime expected, possible 2-3s latency increase
+Notification: Email sent to all admins on 2025-10-15
+
+
+
+Section 6: Health Check History
+
+Line graph showing health check pass/fail over time (last 24 hours)
+Shows uptime percentage
+Click to see detailed health check logs
+
+Section 7: Dependency Status (External Services)
+
+AWS Status Dashboard: 🟢 All services operational
+Certificate Authority (CA): 🟢 Reachable
+Email Service (AWS SES): 🟢 Operational
+SMS Service (Twilio): 🟢 Operational
+Slack API: 🟢 Operational
+
+Actions Panel:
+
+Run Full Health Check Now (button)
+Download Health Report (PDF)
+Subscribe to Status Updates (email)
+View CloudWatch Dashboard (link)
+
+Database Tables Used:
+
+system_health table (health check results)
+service_status table (current status of each service)
+incidents table (incident history)
+maintenance_windows table (scheduled maintenance)
+
+API Calls:
+
+GET /api/v1/monitoring/health/status
+GET /api/v1/monitoring/health/services
+GET /api/v1/monitoring/health/metrics?service=lambda&range=1h
+GET /api/v1/monitoring/health/incidents?status=resolved
+POST /api/v1/monitoring/health/check (trigger manual health check)
+GET /api/v1/monitoring/health/report.pdf
+
+Backend Integrations:
+
+AWS CloudWatch: Metrics and alarms
+AWS Health API: AWS service status
+Custom health check Lambda (runs every 1 minute)
+Third-party status pages (Veeva, Argus, etc.)
+
+
+SECTION 7: COMPLIANCE & AUDIT (3 Pages)
+Page 23: Audit Trail (/audit)
+Purpose: Comprehensive audit logging for regulatory compliance
+Features & Functionality:
+Section 1: Audit Summary Cards
+
+Total audit events (last 30 days): 12,847
+Unique users active: 47
+Failed authentication attempts: 8
+Configuration changes: 156
+File transmissions logged: 6,234
+
+Section 2: Advanced Search & Filters
+Quick Filter Buttons:
+
+All Events
+User Actions (logins, logouts, profile changes)
+File Transmissions (sent, received)
+Configuration Changes (partners, certificates, settings)
+Security Events (failed logins, MFA, permission changes)
+System Events (automated processes)
+
+Detailed Filters Panel:
+
+User Filter:
+
+Dropdown/multi-select of all users
+Include system user (automated actions)
+
+
+Action Type Filter (multi-select):
+
+Authentication (Login, Logout, MFA, Password Reset)
+Partner Management (Created, Updated, Deleted, Tested)
+Certificate Management (Uploaded, Rotated, Archived, Deleted)
+File Operations (Sent, Received, Downloaded, Deleted)
+Configuration (Settings Changed, Integration Updated)
+User Management (Created, Updated, Deleted, Role Changed)
+Alerts (Created, Acknowledged, Dismissed)
+System (Health Check, Backup, Maintenance)
+
+
+Date Range:
+
+Preset: Today, Last 7 days, Last 30 days, Last 90 days, Custom range
+Time precision: Date + Time (HH:MM:SS)
+
+
+Result Filter:
+
+Success only
+Failure only
+All results
+
+
+IP Address Filter:
+
+Text input (supports wildcards, e.g., 203.0.113.*)
+
+
+Entity Filter:
+
+Partner ID/Name
+Message ID
+Certificate ID
+User ID
+
+
+Search Query:
+
+Full-text search across all audit log fields
+Supports operators: AND, OR, NOT
+Example: "partner AND (created OR updated)"
+
+
+
+Section 3: Audit Log Table
+
+Columns:
+
+Timestamp (sortable, format: YYYY-MM-DD HH:MM:SS UTC)
+User (name + email, with user role badge)
+
+Shows "System" for automated actions
+
+
+Action Type (badge with icon)
+
+🔑 Authentication
+🤝 Partner Management
+🔒 Certificate Management
+📄 File Operations
+⚙️ Configuration
+👥 User Management
+🔔 Alert Actions
+🔧 System Events
+
+
+Action (specific action taken)
+
+Examples: "User logged in", "Partner created", "File sent to FDA"
+
+
+Entity (what was affected)
+
+Link to entity (partner detail, message detail, etc.)
+
+
+IP Address (source IP, with location flag icon)
+Result (✅ Success / ❌ Failure)
+Details (expand icon to see more)
+
+
+Expandable Row Details:
+
+Full event details in formatted JSON:
+
+
+
+json    {
+      "event_id": "evt_789abc123def",
+      "timestamp": "2025-10-12T10:15:30.123Z",
+      "user_id": "user_456",
+      "user_email": "john.doe@company.com",
+      "user_role": "Partner Admin",
+      "action_type": "partner_management",
+      "action": "partner_created",
+      "entity_type": "partner",
+      "entity_id": "partner_789",
+      "entity_name": "FDA ESG",
+      "ip_address": "203.0.113.45",
+      "user_agent": "Mozilla/5.0...",
+      "result": "success",
+      "changes": {
+        "partner_name": "FDA ESG",
+        "as2_id": "FDA-CDER-AERS",
+        "as2_url": "https://upload-api-esgng.fda.gov:4080/as2/receive",
+        "status": "testing"
+      },
+      "metadata": {
+        "session_id": "sess_123xyz",
+        "request_id": "req_456abc"
+      }
+    }
+
+Before/After values (for update actions):
+
+Shows what changed (highlighted in yellow)
+
+
+Related events (if applicable):
+
+Link to related audit entries
+
+
+Sorting:
+
+Default: Timestamp (descending - newest first)
+Click any column header to sort
+
+
+Pagination:
+
+100 events per page (adjustable: 50/100/200)
+Total event count display
+Page navigation
+
+
+
+Section 4: Audit Log Export
+
+Export button opens modal:
+
+Format Selection:
+
+CSV (comma-separated values)
+Excel (XLSX)
+PDF (formatted report)
+JSON (raw data)
+
+
+Date Range: Use current filter or select new range
+Columns to Include: (checkboxes for each column)
+Include Details: ☑️ Include full JSON details
+Signature: ☑️ Digitally sign export (for legal compliance)
+Encryption: ☑️ Encrypt export file (password-protected)
+Export button → downloads file
+Email export option (sends to specified email)
+
+
+
+Section 5: Compliance Reports
+
+Pre-configured report templates:
+
+FDA 21 CFR Part 11 Compliance Report
+
+Shows all audit trail events meeting Part 11 requirements
+Includes: User authentication, electronic signatures, audit trail integrity
+Date range selection
+Generate Report button → PDF with digital signature
+
+
+EU Annex 11 Compliance Report
+
+Similar to FDA report but formatted for EU regulations
+Includes system validation documentation references
+
+
+User Activity Report
+
+Select user(s) from dropdown
+Shows all actions by selected user(s)
+Date range selection
+Useful for user access reviews
+
+
+Partner Activity Report
+
+Select partner(s)
+Shows all transmissions and configuration changes for partner
+Date range selection
+
+
+Security Events Report
+
+Failed logins, permission changes, certificate events
+Date range selection
+Useful for security audits
+
+
+Change Control Report
+
+All configuration changes (partners, certificates, system settings)
+Shows who made changes, what changed, when
+Date range selection
+Useful for change management compliance
+
+
+
+
+
+Section 6: Audit Log Integrity Verification
+
+Shows audit log integrity status:
+
+✅ Audit log integrity verified (last check: 2025-10-12 09:00:00 UTC)
+Audit logs are tamper-evident (blockchain-like chaining)
+
+
+Verify Integrity button:
+
+Runs cryptographic verification of audit log chain
+Shows result:
+
+✅ All audit logs verified intact
+❌ Integrity check failed (with details)
+
+
+
+
+Audit Log Retention:
+
+Current retention policy: 7 years
+Audit logs older than 90 days: Moved to S3 Glacier
+Audit logs older than 7 years: Deleted (with documented approval)
+
+
+
+Section 7: Audit Log Alerts
+
+Configure alerts for specific audit events:
+
+Alert on failed login (3+ attempts from same IP)
+Alert on unauthorized access attempts
+Alert on configuration changes by specific users
+Alert on file deletions
+Alert on certificate changes
+
+
+
+Section 8: Recent Critical Events
+
+Quick view panel showing last 10 critical security events:
+
+Failed logins
+Unauthorized access attempts
+Certificate expirations
+Unusual activity patterns
+
+
+Click to jump to full details in table
+
+Database Tables Used:
+
+audit_logs table (primary audit log)
+audit_log_chain table (integrity verification hashes)
+users table (join for user details)
+partners table (join for partner details)
+
+API Calls:
+
+GET /api/v1/audit/logs?user_id=123&action_type=file_sent&date_from=2025-10-01&page=1&limit=100
+GET /api/v1/audit/logs/{logId} (get single audit entry details)
+GET /api/v1/audit/export?format=csv&date_from=2025-10-01&date_to=2025-10-12
+POST /api/v1/audit/verify-integrity (run integrity check)
+GET /api/v1/audit/reports/fda-part11?date_from=2025-01-01&date_to=2025-12-31
+GET /api/v1/audit/stats?range=30d
+
+Backend Integrations:
+
+AWS CloudTrail: AWS API call auditing
+Custom audit logging Lambda (intercepts all API calls)
+S3 Glacier: Long-term audit log storage
+AWS KMS: Encrypt audit logs at rest
+Blockchain-style chaining: Each log entry includes hash of previous entry (tamper detection)
+
+Compliance Features:
+
+Immutable Logs: Once written, audit logs cannot be modified or deleted (append-only)
+Digital Signatures: Critical audit exports are digitally signed
+Access Control: Only Compliance Officers and Admins can view full audit trail
+Retention Policy: Automatically enforced (7-year retention as per FDA requirements)
+Integrity Monitoring: Daily automated integrity checks
+
+
+Page 24: Compliance Reports (/compliance/reports)
+Purpose: Generate regulatory submission reports
+Features & Functionality:
+Section 1: Report Templates Library
+Pre-built Report Templates:
+
+FDA Submission Report
+
+Description: Complete transmission history for FDA ESG submissions
+Includes: Message IDs, timestamps, MDN receipts, ACK2 confirmations
+Format: PDF (formatted for FDA submission)
+Parameters:
+
+Date range (required)
+Partner: FDA ESG (auto-selected)
+Include failed transmissions: ☑️ Yes
+
+
+Generate button
+
+
+EMA Submission Report
+
+Description: EudraVigilance transmission history
+Similar to FDA report, formatted for EMA requirements
+Parameters:
+
+Date range
+Partner: EMA EudraVigilance (auto-selected)
+
+
+
+
+Partner-Specific Transmission Report
+
+Description: All transmissions (sent + received) for a specific partner
+Parameters:
+
+Partner selection (dropdown)
+Date range
+Include validation results: ☑️
+Include MDN/ACK details: ☑️
+
+
+Format options: PDF / Excel / CSV
+
+
+Monthly Transmission Summary
+
+Description: High-level statistics for all transmissions
+Includes:
+
+Total messages sent/received
+Success rates by partner
+MDN receipt statistics
+Validation failure summary
+
+
+Parameters:
+
+Month/Year selection
+
+
+Format: PDF with charts
+
+
+Certificate Management Report
+
+Description: All certificate-related activities
+Includes:
+
+Current certificates (active, expiring, expired)
+Certificate uploads/rotations
+Certificate validation history
+
+
+Parameters:
+
+Date range
+Partner filter (optional)
+
+
+Format: PDF / Excel
+
+
+Audit Trail Report (links to /audit export)
+
+Description: Comprehensive audit log for compliance
+Already covered in Page 23
+
+
+Validation Failure Report
+
+Description: All files that failed E2B(R3) validation
+Includes:
+
+Filename, partner, timestamp
+Validation errors (detailed)
+Resolution status
+
+
+Parameters:
+
+Date range
+Partner filter (optional)
+Validation error type filter
+
+
+Format: Excel (for data analysis)
+
+
+System Uptime & Performance Report
+
+Description: Service Level Agreement (SLA) compliance report
+Includes:
+
+System uptime percentage
+Average response times
+Error rates
+Incidents and resolution times
+
+
+Parameters:
+
+Date range (monthly/quarterly/yearly)
+
+
+Format: PDF with charts
+
+
+Reconciliation Report (links to /monitoring/reconciliation)
+
+Description: MDN/ACK reconciliation for compliance
+Shows all messages with ACK1/ACK2 status
+Already covered in Page 20
+
+
+Custom Report Builder
+
+Description: Build your own report from available data
+Drag-and-drop interface:
+
+Select data sources (messages, partners, certificates, audit logs)
+Select columns to include
+Apply filters
+Choose format (PDF/Excel/CSV)
+
+
+Save as template for reuse
+
+
+
+Section 2: Report Generation Interface
+When user selects a template:
+
+Report template name display
+Description and included data
+
+Parameters Form:
+
+Date Range Picker:
+
+Presets: Last Month, Last Quarter, Last Year, Custom
+Calendar widget for custom selection
+
+
+Partner Selection (if applicable):
+
+Dropdown: All Partners / Specific Partner
+Multi-select option
+
+
+Filters (template-specific):
+
+Message status (success/failure/all)
+Validation status (passed/failed/all)
+Include attachments (MDNs, ACK2s, etc.)
+
+
+Report Format:
+
+PDF (formatted, printable)
+Excel (XLSX - for data analysis)
+CSV (raw data export)
+
+
+Report Options:
+
+Include cover page ☑️
+Include executive summary ☑️
+Include detailed appendices ☑️
+Digital signature ☑️ (for legal compliance)
+Password protection ☐ (enter password)
+
+
+Delivery Method:
+
+Download immediately
+Email to: (enter email addresses)
+Schedule recurring report (daily/weekly/monthly)
+
+
+
+Generate Report Button:
+
+Prominent, primary-colored button
+Shows loading spinner: "Generating report... This may take up to 2 minutes for large datasets"
+Progress bar (if large dataset)
+
+Section 3: Report Preview
+(After generation, before download)
+
+PDF viewer showing first page
+Page navigation
+Zoom controls
+Download button
+Email button
+Print button
+Regenerate with different parameters button
+
+Section 4: Report History
+
+Table showing previously generated reports:
+
+Columns:
+
+Report Name
+Template Used
+Generated By (user)
+Generated At (timestamp)
+Parameters (date range, partners, etc.)
+
+
+
+
+RetrySContinueSECTION 7: COMPLIANCE & AUDIT (Continued)
+Page 24: Compliance Reports (/compliance/reports) - Continued
+Section 4: Report History (continued)
+
+Table showing previously generated reports:
+
+Columns:
+
+Report Name
+Template Used
+Generated By (user)
+Generated At (timestamp)
+Parameters (date range, partners, etc.)
+File Size
+Format (PDF/Excel/CSV)
+Status (✅ Available / ⏳ Generating / ❌ Failed / 🗑️ Expired)
+Actions (Download / Re-generate / Delete / Share)
+
+
+
+
+Report Retention:
+
+Reports stored for 90 days
+Auto-deletion warning icon appears at 80 days
+Download before expiration
+
+
+Filters:
+
+Template type
+Generated by (user filter)
+Date range of generation
+Search by report name
+
+
+
+Section 5: Scheduled Reports
+
+Table showing recurring automated reports:
+
+Columns:
+
+Report Name
+Template
+Frequency (Daily/Weekly/Monthly/Quarterly)
+Next Generation Date
+Recipients (email list)
+Last Generated
+Status (Active/Paused)
+Actions (Edit / Pause / Delete / Run Now)
+
+
+
+
+Create Scheduled Report Button:
+
+Opens modal:
+
+Select template
+Configure parameters
+Set frequency:
+
+Daily (select time)
+Weekly (select day + time)
+Monthly (select date + time)
+Quarterly (select month + date + time)
+
+
+Recipients (comma-separated emails)
+Report format
+Email subject line template
+Email body template
+Save button
+
+
+
+
+
+Section 6: Report Templates Management
+
+Custom Templates:
+
+User-created report templates
+Table showing:
+
+Template Name
+Created By
+Last Modified
+Times Used
+Actions (Edit / Duplicate / Delete / Share)
+
+
+
+
+Create New Template Button:
+
+Opens report builder interface:
+
+Template name
+Description
+Data source selection:
+
+☑️ Message transmissions
+☑️ Partner information
+☑️ Certificate details
+☑️ Validation results
+☑️ Audit logs
+☑️ System metrics
+
+
+Column selection (drag-and-drop):
+
+Available fields (left panel)
+Selected fields (right panel)
+Reorder by dragging
+
+
+Filter configuration:
+
+Add filter rules (field, operator, value)
+Multiple filters with AND/OR logic
+
+
+Sorting configuration
+Grouping options
+Chart/visualization options (for PDF reports)
+Save as template button
+
+
+
+
+
+Section 7: Regulatory Compliance Checklist
+
+Interactive checklist for different regulatory requirements:
+
+FDA 21 CFR Part 11 Checklist:
+
+☑️ Audit trail implemented and validated
+☑️ Electronic signatures configured
+☑️ User access controls enforced
+☑️ Data integrity measures in place
+☑️ System validation documentation available
+Generate Part 11 Compliance Report button
+
+EU Annex 11 Checklist:
+
+☑️ Risk management documented
+☑️ Supplier/vendor assessment completed
+☑️ Validation documentation maintained
+☑️ Data backup and recovery tested
+☑️ Business continuity plan documented
+Generate Annex 11 Compliance Report button
+
+HIPAA Compliance Checklist (if applicable):
+
+☑️ ePHI access controls implemented
+☑️ Encryption at rest and in transit
+☑️ Audit logs maintained
+☑️ Business Associate Agreements (BAAs) in place
+Generate HIPAA Compliance Report button
+
+Section 8: Validation Documentation
+
+Links to system validation documents:
+
+Installation Qualification (IQ) Report
+Operational Qualification (OQ) Report
+Performance Qualification (PQ) Report
+User Requirements Specification (URS)
+Functional Specification Document (FSD)
+System Validation Plan (SVP)
+Traceability Matrix
+
+
+Download buttons for each document
+Version history for each document
+
+Section 9: Report Analytics
+
+Most Generated Reports:
+
+Bar chart showing top 10 report templates by usage
+
+
+Reports Generated Over Time:
+
+Line chart showing report generation trends
+
+
+Average Report Generation Time:
+
+Shows performance metrics
+Helps identify slow reports for optimization
+
+
+
+Database Tables Used:
+
+reports table (generated report metadata)
+report_templates table (template definitions)
+scheduled_reports table (recurring report config)
+report_generation_log table (generation history and performance)
+
+API Calls:
+
+GET /api/v1/reports/templates
+POST /api/v1/reports/generate (body: template_id, parameters)
+GET /api/v1/reports/{reportId}/download
+GET /api/v1/reports/history?page=1&limit=50
+POST /api/v1/reports/templates (create custom template)
+PUT /api/v1/reports/templates/{templateId} (update template)
+POST /api/v1/reports/schedule (create scheduled report)
+DELETE /api/v1/reports/{reportId} (delete generated report)
+GET /api/v1/reports/analytics
+
+Backend Integrations:
+
+AWS Lambda: Report generation logic
+AWS S3: Store generated reports (temporary storage)
+AWS SES: Email delivery for scheduled reports
+PDF generation library (e.g., wkhtmltopdf, Puppeteer)
+Excel generation library (e.g., ExcelJS)
+AWS EventBridge: Schedule recurring report generation
+
+
+Page 25: Regulatory Submission Manager (/compliance/submissions)
+Purpose: Track and manage regulatory submissions to health authorities
+Features & Functionality:
+Section 1: Submission Overview Dashboard
+
+Active Submissions:
+
+Total active submissions: 23
+Pending acknowledgment: 5
+Accepted: 17
+Rejected: 1
+
+
+Quick Stats:
+
+Submissions this month: 47
+Success rate: 98.3%
+Average acknowledgment time: 12.5 hours
+
+
+
+Section 2: Submissions Table
+
+Columns:
+
+Submission ID (internal tracking number)
+Regulatory Agency (FDA ESG, EMA, Health Canada, etc.)
+Submission Type:
+
+Initial Report (15-day)
+Follow-up Report
+Periodic Safety Update Report (PSUR)
+Development Safety Update Report (DSUR)
+
+
+Case ID(s) (one or multiple)
+Submitted Date
+Submitted By (user)
+Message ID(s) (link to outbox)
+Status:
+
+⏳ Submitted - Awaiting Acknowledgment
+✅ Acknowledged - Accepted
+❌ Rejected - Action Required
+📋 Under Review
+✅ Closed - Complete
+
+
+Acknowledgment Date
+Agency Reference Number (assigned by regulatory agency)
+Actions (View Details / Download Receipt / Resubmit / Close)
+
+
+
+Section 3: Submission Filters
+
+Regulatory Agency multi-select
+Submission Type multi-select
+Status multi-select
+Date range (submission date)
+Search by Case ID, Submission ID, or Agency Reference Number
+
+Section 4: Create New Submission Entry
+(Button: "+ Track New Submission")
+
+Modal form:
+
+Submission Type: Dropdown
+Regulatory Agency: Dropdown
+Case ID(s): Text input (comma-separated for multiple)
+Message ID(s): Link to message(s) in outbox (auto-populate option)
+Submitted Date: Date picker (defaults to message sent date)
+Submission Notes: Textarea
+Attach Documents:
+
+Upload supporting documents
+Link to messages in system
+
+
+Save button
+
+
+
+Section 5: Submission Detail View
+(Click on any submission row)
+Tabs in Detail View:
+Tab 1: Overview
+
+Full submission details
+Submission timeline:
+
+  2025-10-10 14:30 - Submission prepared
+  2025-10-10 14:45 - File sent to FDA ESG (MSG-12345)
+  2025-10-10 14:47 - MDN received (delivery confirmed)
+  2025-10-10 16:20 - Business ACK received (ACK2)
+  2025-10-10 16:20 - FDA reference number assigned: FDA-2025-001234
+  2025-10-11 09:15 - Acknowledged as ACCEPTED
+  2025-10-11 09:15 - Submission closed
+
+Status badge (large, prominent)
+Agency reference number (if assigned)
+Acknowledgment receipt (download link)
+
+Tab 2: Related Messages
+
+Table showing all AS2 messages related to this submission:
+
+Initial submission message
+Follow-up messages (if any)
+ACK/MDN messages
+
+
+Each row links to message detail page
+
+Tab 3: Case Information
+
+E2B(R3) metadata extracted from submission:
+
+Sender Safety Report Unique ID
+Case ID(s)
+Patient information (initials, age, gender)
+Suspect product(s)
+Adverse event(s)
+Reporter information
+Submission date
+
+
+
+Tab 4: Documents
+
+All documents related to submission:
+
+Original E2B(R3) XML file(s)
+MDN receipt(s)
+Business acknowledgment(s)
+Agency receipt/confirmation
+Supporting documents
+
+
+Download all as ZIP button
+
+Tab 5: Activity Log
+
+Audit trail specific to this submission
+Shows all actions: created, updated, messages sent, acknowledgments received, status changes
+User who performed each action
+
+Tab 6: Notes
+
+Internal notes about this submission
+Add new note (textarea + save button)
+Note history (timestamped, with author)
+
+Section 6: Submission Workflow Actions
+For "Awaiting Acknowledgment" status:
+
+Send Follow-up Request button (emails regulatory contact)
+Mark as Acknowledged button (manual status update)
+Link Related Message button (if ACK2 arrived but not linked)
+
+For "Rejected" status:
+
+View Rejection Reason button
+Resubmit Workflow:
+
+Fix issues in original file
+Upload corrected file
+Send corrected submission
+Link to original submission
+
+
+Close Submission button (if resolved through other means)
+
+For "Accepted" status:
+
+Download Confirmation Receipt
+Close Submission button (marks as complete)
+
+Section 7: Agency Communication Log
+
+Table showing all communications with regulatory agency:
+
+Date/Time
+Communication Type (Email, Phone, System Message)
+Direction (Sent/Received)
+Subject/Topic
+Contact Person (at agency)
+Summary/Notes
+Attachments
+Actions (View Details / Add Response)
+
+
+Add Communication Button:
+
+Opens modal to log email, phone call, or other communication
+Fields: Date, Type, Direction, Contact, Summary, Attachments
+
+
+
+Section 8: Submission Statistics
+
+By Agency:
+
+Table showing stats per regulatory agency:
+
+Total submissions
+Success rate
+Average acknowledgment time
+Pending submissions
+
+
+
+
+By Submission Type:
+
+Bar chart showing volume by submission type
+
+
+Acknowledgment Time Trend:
+
+Line chart showing average acknowledgment time over months
+Helps identify if agency response times are increasing
+
+
+
+Section 9: Alerts & Reminders
+
+Automated alerts for:
+
+Submission awaiting acknowledgment >48 hours (configurable)
+Rejected submission requiring action
+Follow-up due date approaching (for periodic reports)
+
+
+Reminder Configuration:
+
+Set reminders for follow-up submissions
+Recurring reminders for PSUR deadlines
+Email notifications to assigned users
+
+
+
+Section 10: Regulatory Submission Calendar
+
+Calendar view showing:
+
+Submission deadlines (color-coded by agency)
+Submitted dates
+Acknowledgment dates
+Follow-up due dates
+
+
+Click date to see submissions or create new submission
+
+Section 11: Export Submission Report
+
+Generate submission summary report
+Parameters:
+
+Date range
+Regulatory agency filter
+Include case details: ☑️
+Include communication log: ☑️
+
+
+Format: PDF / Excel
+Use case: Management reporting, compliance review
+
+Database Tables Used:
+
+regulatory_submissions table (submission_id, agency, case_ids, status, submitted_date, ack_date, reference_number)
+submission_messages table (links submissions to messages)
+submission_documents table (attached documents)
+submission_communications table (agency communication log)
+submission_notes table (internal notes)
+submission_timeline table (status change history)
+
+API Calls:
+
+GET /api/v1/submissions?status=pending&agency=fda
+POST /api/v1/submissions (create new submission entry)
+GET /api/v1/submissions/{submissionId}
+PUT /api/v1/submissions/{submissionId} (update submission)
+POST /api/v1/submissions/{submissionId}/notes (add note)
+POST /api/v1/submissions/{submissionId}/communications (log communication)
+POST /api/v1/submissions/{submissionId}/resubmit (resubmit after rejection)
+GET /api/v1/submissions/stats
+GET /api/v1/submissions/calendar?month=2025-10
+GET /api/v1/submissions/{submissionId}/export.pdf
+
+Backend Integrations:
+
+Links to messages in outbox
+Automatic status updates based on ACK2 reception
+Email notifications via AWS SES
+Calendar integration (optional: sync to Google Calendar, Outlook)
+
+
+SECTION 8: CONFIGURATION & ADMINISTRATION (3 Pages)
+Page 26: User Management (/admin/users)
+Purpose: Manage user accounts, roles, and permissions
+Features & Functionality:
+Section 1: User Summary Cards
+
+Total Users: 47
+Active Users: 45
+Inactive/Suspended: 2
+Pending Invitations: 3
+Admins: 5
+
+Section 2: Users Table
+
+Columns:
+
+Profile Photo (avatar or initials)
+Name (sortable)
+Email (sortable)
+Role (badge with color coding):
+
+🔴 Tenant Admin (full access)
+🟠 Compliance Officer (read-only audit access)
+🟢 Partner Admin (manage partners, certificates)
+🔵 Operator (send/receive files only)
+🟣 Viewer (read-only access)
+
+
+Status:
+
+✅ Active
+⏳ Pending Invitation
+🔒 Suspended
+❌ Locked (too many failed login attempts)
+
+
+Last Login (timestamp)
+MFA Enabled (✅ Yes / ❌ No)
+Created Date
+Actions (Edit / Reset Password / Enable/Disable / Delete)
+
+
+
+Section 3: Filters & Search
+
+Role filter (multi-select)
+Status filter (Active/Pending/Suspended/All)
+MFA status filter (Enabled/Disabled/All)
+Search by name or email
+Sort by name, email, role, last login, created date
+
+Section 4: Add New User (Button: "+ Add User")
+
+Modal form:
+
+Basic Information:
+
+First Name (required)
+Last Name (required)
+Email (required, validated)
+Phone Number (optional)
+
+
+Role Assignment:
+
+Radio button selection:
+
+⚫ Tenant Admin
+
+Description: Full system access, can manage all users, partners, and settings
+
+
+⚫ Compliance Officer
+
+Description: Read-only access to audit logs and compliance reports
+
+
+⚫ Partner Admin
+
+Description: Manage trading partners, certificates, test connections
+
+
+⚫ Operator
+
+Description: Send and receive files, view message status
+
+
+⚫ Viewer
+
+Description: Read-only access to dashboard and reports
+
+
+
+
+
+
+Partner Restrictions (if role = Operator or Partner Admin):
+
+Restrict to specific partners: ☑️
+Multi-select partner list (user can only interact with selected partners)
+
+
+Account Settings:
+
+Send invitation email: ☑️ (user will receive email to set password)
+Require MFA: ☑️ (force multi-factor authentication)
+Account expiration date: (optional, for temporary access)
+
+
+Permissions (Advanced - checkboxes for granular control):
+
+Can send files: ☑️
+Can receive files: ☑️
+Can manage partners: ☐
+Can manage certificates: ☐
+Can view audit logs: ☐
+Can generate reports: ☑️
+Can manage users: ☐
+Can change system settings: ☐
+
+
+Create User button
+
+
+
+Section 5: Edit User
+(Click Edit action on any user)
+
+Same form as Add User, but with existing values pre-filled
+Additional options:
+
+Reset Password button (sends password reset email)
+Unlock Account button (if locked due to failed logins)
+View Login History button (shows recent login attempts)
+Revoke Active Sessions button (force logout from all devices)
+
+
+
+Section 6: User Detail View
+(Click on user name in table)
+Tabs:
+Tab 1: Profile
+
+Full user information
+Profile photo (upload new photo option)
+Contact details
+Role and permissions display
+Account status
+MFA status
+Created date, last updated date
+Actions: Edit Profile, Reset Password, Suspend Account
+
+Tab 2: Activity History
+
+Recent actions by this user (from audit log)
+Filters: Action type, Date range
+Shows: Login events, file transmissions, configuration changes
+Export user activity report (CSV/PDF)
+
+Tab 3: Login History
+
+Table showing login attempts:
+
+Timestamp
+IP Address (with location flag)
+Device/Browser (user agent)
+Result (Success/Failed)
+MFA Used (Yes/No)
+
+
+Failed login attempts highlighted in red
+Suspicious activity alerts (e.g., logins from unusual locations)
+
+Tab 4: Permissions
+
+Detailed permissions matrix:
+
+Table showing all permission categories
+Checkboxes to enable/disable specific permissions
+Save Changes button
+
+
+Permission templates dropdown (quick apply common permission sets)
+
+Tab 5: Sessions
+
+Active sessions for this user:
+
+Session ID
+Device/Browser
+IP Address
+Login Time
+Last Activity
+Actions: Revoke Session (force logout)
+
+
+Useful for security monitoring
+
+Section 7: Bulk User Actions
+
+Select multiple users (checkboxes)
+Bulk actions dropdown:
+
+Send Password Reset Emails
+Enable MFA for Selected
+Change Role (select new role)
+Suspend Selected Users
+Activate Selected Users
+Export Selected Users (CSV)
+Delete Selected Users (confirmation required)
+
+
+
+Section 8: Role Management
+
+Pre-defined Roles Table:
+
+Role Name
+Description
+User Count (how many users have this role)
+Permissions Summary
+Actions (View Details / Edit Permissions / Duplicate)
+
+
+Create Custom Role Button:
+
+Opens modal:
+
+Role Name
+Description
+Select permissions (checkbox tree):
+
+Partner Management
+
+View partners
+Create partners
+Edit partners
+Delete partners
+Test connections
+
+
+Certificate Management
+
+View certificates
+Upload certificates
+Rotate certificates
+Delete certificates
+
+
+File Operations
+
+Send files
+Receive files
+Download files
+Delete files
+
+
+Monitoring & Alerts
+
+View dashboard
+View alerts
+Acknowledge alerts
+Configure alerts
+
+
+Compliance & Audit
+
+View audit logs
+Export audit logs
+Generate reports
+Manage submissions
+
+
+Administration
+
+Manage users
+Manage roles
+System settings
+Integration settings
+
+
+
+
+Save Custom Role button
+
+
+
+
+
+Section 9: User Invitation Management
+
+Table showing pending invitations:
+
+Email
+Role
+Invited By (user)
+Invited Date
+Expiration Date (invitations expire after 7 days)
+Status (Pending/Accepted/Expired)
+Actions (Resend / Revoke)
+
+
+Resend Invitation button (sends new email with new token)
+Revoke Invitation button (deletes invitation)
+
+Section 10: Security Policies
+
+Configure account security policies:
+
+Password Policy:
+
+Minimum length: [12] characters
+Require uppercase: ☑️
+Require lowercase: ☑️
+Require numbers: ☑️
+Require special characters: ☑️
+Password expiration: [90] days
+Password history: Prevent reuse of last [5] passwords
+
+
+Login Policy:
+
+Max failed login attempts: [5]
+Account lockout duration: [30] minutes
+Session timeout: [60] minutes of inactivity
+Require MFA for all users: ☑️
+Allow "Remember Me": ☑️ (duration: [7] days)
+
+
+IP Restrictions:
+
+Enable IP whitelist: ☐
+Allowed IP ranges: (textarea, one per line)
+Block suspicious IP addresses: ☑️
+
+
+Save Security Policies button
+
+
+
+Section 11: User Activity Analytics
+
+Active Users Chart:
+
+Line graph showing daily active users over last 30 days
+
+
+Login Activity Heatmap:
+
+Shows peak login times (hour of day vs. day of week)
+
+
+Role Distribution:
+
+Pie chart showing user count by role
+
+
+MFA Adoption:
+
+Progress bar: 85% of users have MFA enabled
+
+
+
+Database Tables Used:
+
+users table (user_id, name, email, role, status, mfa_enabled, created_at, last_login)
+user_permissions table (user_id, permission_name, granted)
+roles table (role_id, role_name, description)
+role_permissions table (role_id, permission_name)
+user_sessions table (session_id, user_id, ip_address, device, login_at, last_activity)
+user_invitations table (invitation_id, email, role, invited_by, invited_at, expires_at, status)
+login_attempts table (user_id, ip_address, timestamp, success)
+
+API Calls:
+
+GET /api/v1/admin/users?role=operator&status=active&page=1
+POST /api/v1/admin/users (create user)
+GET /api/v1/admin/users/{userId}
+PUT /api/v1/admin/users/{userId} (update user)
+DELETE /api/v1/admin/users/{userId} (soft delete)
+POST /api/v1/admin/users/{userId}/reset-password (send reset email)
+POST /api/v1/admin/users/{userId}/unlock (unlock locked account)
+GET /api/v1/admin/users/{userId}/activity (activity history)
+GET /api/v1/admin/users/{userId}/login-history
+POST /api/v1/admin/users/{userId}/revoke-sessions (logout all devices)
+POST /api/v1/admin/users/bulk-action (body: action_type, user_ids)
+GET /api/v1/admin/roles
+POST /api/v1/admin/roles (create custom role)
+GET /api/v1/admin/invitations
+POST /api/v1/admin/invitations (send invitation)
+DELETE /api/v1/admin/invitations/{invitationId} (revoke)
+PUT /api/v1/admin/security-policies (update policies)
+
+Backend Integrations:
+
+AWS Cognito or custom JWT authentication
+AWS SES: Send invitation and password reset emails
+MFA: AWS Cognito MFA or custom TOTP implementation
+Session management: Redis or DynamoDB for session storage
+
+
+Page 27: System Settings (/admin/settings)
+Purpose: Configure global system settings
+Features & Functionality:
+Tabbed Interface:
+Tab 1: Organization Profile
+
+Company Information:
+
+Organization Name (text input)
+Business Type (dropdown: Pharmaceutical / CRO / Medical Device / Other)
+Address Line 1, Line 2
+City, State/Province, Postal Code
+Country (dropdown)
+Phone Number
+Website URL
+
+
+Primary Contact:
+
+Contact Name
+Contact Email
+Contact Phone
+
+
+AS2 Configuration:
+
+Your Organization AS2 ID (unique identifier, read-only after setup)
+AS2 Endpoint URL (your AWS Transfer Family endpoint, read-only)
+Display these in partner onboarding materials: ☑️
+
+
+Logo Upload:
+
+Current logo display
+Upload new logo button (for reports, emails)
+Recommended size: 200x200px, PNG/JPG
+
+
+Save Changes button
+
+Tab 2: AS2 Default Settings
+
+Encryption Settings:
+
+Default Encryption Algorithm (dropdown):
+
+AES-128-CBC
+AES-192-CBC
+AES-256-CBC (recommended)
+3DES
+
+
+
+
+Signing Settings:
+
+Default Signing Algorithm (dropdown):
+
+SHA-1 (deprecated, not recommended)
+SHA-256 (recommended)
+SHA-384
+SHA-512
+
+
+
+
+MDN Settings:
+
+Request Signed MDN by Default: ☑️ Yes / ☐ No
+Default MDN Delivery Method: ⚫ Synchronous / ⚫ Asynchronous
+MDN Timeout (minutes): [15] (range: 5-60)
+MDN Signing Algorithm (dropdown): Same as signing algorithm options
+
+
+Retry Settings:
+
+Enable Auto-Retry on Send Failure: ☑️
+Max Retry Attempts: [3] (range: 1-5)
+Retry Interval (minutes): [5] (range: 1-30)
+Exponential Backoff: ☑️ (increases delay between retries)
+
+
+Compression Settings:
+
+Enable Compression by Default: ☐
+Compression Algorithm: ZLIB
+
+
+Message Settings:
+
+Default Message Subject Line Template:
+
+Text input: ICSR Submission - {filename} - {date}
+Available variables: {filename}, {date}, {partner_name}, {message_id}
+
+
+
+
+Save Default Settings button
+Note: "These settings apply to new partners. Existing partners retain their individual settings."
+
+Tab 3: Email Notifications
+
+System Email Settings:
+
+From Email Address: no-reply@as2portal.com
+From Name: AS2 Pharmacovigilance Portal
+Reply-To Email: support@as2portal.com
+
+
+Notification Recipients:
+
+System Administrators: (comma-separated emails)
+Operations Team: (comma-separated emails)
+Compliance Team: (comma-separated emails)
+
+
+Notification Types (enable/disable):
+
+☑️ MDN Timeout Alerts
+
+Recipients: Operations Team
+Threshold: 15 minutes
+
+
+☑️ Certificate Expiry Warnings
+
+Recipients: System Administrators
+Warning at: 30 days, 15 days, 7 days before expiry
+
+
+☑️ Validation Failure Alerts
+
+Recipients: Compliance Team
+Batch notifications: Group if >5 failures/hour
+
+
+☑️ System Error Alerts
+
+Recipients: System Administrators
+Severity: HIGH and CRITICAL only
+
+
+☑️ Daily Summary Reports
+
+Recipients: Operations Team
+Send at: 09:00 AM UTC
+Include: Message counts, success rates, pending actions
+
+
+☑️ Weekly Performance Reports
+
+Recipients: Management Team
+Send on: Monday at 09:00 AM UTC
+Include: Charts, statistics, trends
+
+
+☑️ New User Registration Notifications
+
+Recipients: System Administrators
+
+
+☑️ Successful File Transmission Confirmations
+
+Recipients: Individual user who sent the file
+Optional: ☐ (can be disabled if too many emails)
+
+
+
+
+Email Templates:
+
+Customize email templates for each notification type
+Template editor with variables (e.g., {user_name}, {partner_name}, {message_id})
+Preview button
+Reset to Default button
+
+
+Save Email Settings button
+
+Tab 4: Data Retention & Archival
+
+Message Retention Policy:
+
+Retain messages in primary storage: [90] days
+Archive to S3 Glacier after: [90] days
+Delete archived messages after: [7] years (FDA requirement)
+
+
+Audit Log Retention:
+
+Retain audit logs: [7] years (immutable, cannot be less)
+Archive to S3 Glacier after: [90] days
+
+
+Report Retention:
+
+Retain generated reports: [90] days
+Auto-delete after retention period: ☑️
+
+
+File Storage Quotas:
+
+Current storage used: 234 GB
+Storage limit: 1000 GB
+Alert when usage exceeds: [80]%
+
+
+Automated Cleanup:
+
+Enable automated cleanup: ☑️
+Cleanup runs: Daily at 02:00 AM UTC
+Last cleanup run: 2025-10-12 02:00:00 UTC
+Files deleted in last run: 47
+
+
+Save Retention Policies button
+
+Tab 5: API Configuration
+
+API Access:
+
+API Enabled: ☑️ Yes / ☐ No
+API Base URL: https://api.as2portal.example.com/v1 (read-only)
+API Documentation: [View Swagger Docs] button
+
+
+API Keys Management:
+
+Table showing existing API keys:
+
+Key Name (e.g., "Mobile App Key", "Integration Key")
+Key Prefix (first 8 chars, e.g., "as2_key_abcd...")
+Created Date
+Last Used
+Expires Date (optional)
+Status (Active/Revoked)
+Actions (View/Regenerate/Revoke/Delete)
+
+
+Generate New API Key Button:
+
+Opens modal:
+
+Key Name (text input)
+Expiration (optional date picker or "Never expires")
+Scope/Permissions (checkboxes):
+
+Read messages
+Send messages
+Manage partners
+Manage certificates
+View audit logs
+Generate reports
+
+
+Rate Limit: [1000] requests per hour
+Generate button
+
+
+After generation:
+
+Display full API key (only shown once)
+"Copy to Clipboard" button
+Warning: "Save this key securely. It won't be shown again."
+
+
+
+
+
+
+Webhooks:
+
+Enable webhooks: ☑️
+Webhook events (checkboxes):
+
+☑️ Message Sent
+☑️ Message Received
+☑️ MDN Received
+☑️ Validation Completed
+☑️ Routing Completed
+☑️
+
+
+
+
+RetrySContinueSECTION 8: CONFIGURATION & ADMINISTRATION (Continued)
+Page 27: System Settings (/admin/settings) - Continued
+Tab 5: API Configuration (continued)
+
+Webhooks: (continued)
+
+Webhook events (checkboxes):
+
+☑️ Message Sent
+☑️ Message Received
+☑️ MDN Received
+☑️ Validation Completed
+☑️ Routing Completed
+☑️ Certificate Expiring
+☑️ Alert Triggered
+
+
+Webhook Endpoints Table:
+
+URL
+Events Subscribed
+Status (Active/Disabled)
+Last Success
+Last Failure
+Actions (Edit/Test/Delete)
+
+
+Add Webhook Endpoint Button:
+
+Opens modal:
+
+Endpoint URL (HTTPS required)
+Secret Key (for signature verification)
+Events to subscribe (multi-select)
+Retry on failure: ☑️ (max 3 retries)
+Test Endpoint button (sends test payload)
+Save button
+
+
+
+
+
+
+API Rate Limiting:
+
+Global rate limit: [10,000] requests per hour
+Per API key rate limit: [1,000] requests per hour
+Burst limit: [100] requests per minute
+Rate limit exceeded response: 429 Too Many Requests
+
+
+API Security:
+
+Require HTTPS: ☑️ (mandatory)
+IP Whitelist for API access: ☐ Enable
+Allowed IPs: (textarea, one per line)
+JWT token expiration: [1] hour
+Refresh token expiration: [30] days
+
+
+
+Tab 6: Integration Settings
+
+Downstream System Integrations:
+Veeva Vault Safety:
+
+Status: ✅ Connected / ❌ Disconnected
+Configuration:
+
+Vault URL: https://company.veevavault.com
+API Version: v23.1
+Authentication Method: OAuth 2.0
+Client ID: [encrypted field]
+Client Secret: [encrypted field, hidden]
+Default Vault: Safety Vault
+Auto-route received files: ☑️
+
+
+Test Connection button
+Last successful connection: 2025-10-12 09:45:32 UTC
+Edit Configuration button
+
+Oracle Argus Safety:
+
+Status: ✅ Connected / ❌ Disconnected
+Configuration:
+
+Argus URL: https://argus.company.com
+API Endpoint: /api/v1/cases
+Authentication: Basic Auth
+Username: [encrypted]
+Password: [encrypted, hidden]
+Auto-route received files: ☑️
+
+
+Test Connection button
+Last successful connection: 2025-10-12 09:30:15 UTC
+Edit Configuration button
+
+Custom API Integration:
+
+Status: ⚪ Not Configured
+Add Custom Integration button
+
+Opens modal:
+
+Integration Name
+Base URL
+Authentication Type (None/Basic/Bearer Token/OAuth 2.0/API Key)
+Authentication credentials (fields vary by type)
+Request headers (key-value pairs)
+Request body template (JSON)
+Test Connection button
+Save button
+
+
+
+
+
+
+Add New Integration Button:
+
+Dropdown showing available integration templates:
+
+Veeva Vault
+Oracle Argus
+ENNOV Safety
+ArisGlobal LifeSphere
+Custom REST API
+
+
+Select template → opens configuration modal
+
+
+
+Tab 7: Single Sign-On (SSO)
+
+SSO Configuration:
+
+Enable SSO: ☑️ Yes / ☐ No
+SSO Provider: Dropdown (SAML 2.0 / OAuth 2.0 / OIDC)
+
+SAML 2.0 Settings:
+
+Identity Provider (IdP) Metadata URL: (text input)
+Or Upload IdP Metadata XML: (file upload)
+Service Provider (SP) Entity ID: (read-only, auto-generated)
+SP Assertion Consumer Service URL: (read-only)
+SP Metadata URL: (read-only, for IdP configuration)
+Download SP Metadata button
+
+Attribute Mapping:
+
+Email attribute: email
+First name attribute: firstName
+Last name attribute: lastName
+Role attribute: role (optional)
+
+SSO Options:
+
+Allow username/password login: ☑️ (as fallback)
+Just-in-Time (JIT) User Provisioning: ☑️
+Default role for new SSO users: Operator
+Required domain(s): company.com, example.com (comma-separated)
+Test SSO Configuration button
+Save SSO Settings button
+
+
+
+Tab 8: Branding & Customization
+
+Portal Branding:
+
+Portal Title: "AS2 Pharmacovigilance Portal"
+Tagline: "Secure ICSR Exchange Platform"
+Primary Color: [color picker] #0066CC
+Secondary Color: [color picker] #00AA66
+Accent Color: [color picker] #FF6600
+Preview theme button
+
+
+Logo & Images:
+
+Portal Logo (navigation bar): [Upload] 180x50px
+Login Page Background: [Upload] 1920x1080px
+Favicon: [Upload] 32x32px
+
+
+Custom CSS:
+
+Advanced customization for CSS experts
+Textarea for custom CSS code
+Apply Custom CSS: ☑️
+Warning: "Custom CSS may break portal functionality. Use with caution."
+
+
+Footer Content:
+
+Footer Text: "© 2025 Your Company. All rights reserved."
+Footer Links (key-value pairs):
+
+Privacy Policy: https://company.com/privacy
+Terms of Service: https://company.com/terms
+Support: mailto:support@company.com
+
+
+
+
+Save Branding button
+Reset to Default Theme button
+
+Tab 9: Backup & Disaster Recovery
+
+Automated Backups:
+
+Enable automated backups: ☑️
+Backup frequency: Daily at 03:00 AM UTC
+Backup retention: [30] days
+Backup location: S3 bucket: s3://as2-backups-encrypted
+Last backup: 2025-10-12 03:00:00 UTC
+Backup status: ✅ Successful (234 GB backed up)
+
+
+Backup History:
+
+Table showing recent backups:
+
+Backup ID
+Date/Time
+Size
+Status (Success/Failed)
+Actions (Download/Restore/Delete)
+
+
+
+
+Manual Backup:
+
+Create Backup Now button
+Backs up: Database, configuration, uploaded files
+Progress bar during backup
+
+
+Disaster Recovery Plan:
+
+Recovery Time Objective (RTO): 4 hours
+Recovery Point Objective (RPO): 24 hours
+View DR Documentation button (PDF)
+Last DR Test Date: 2025-09-15
+Next Scheduled DR Test: 2025-12-15
+
+
+Database Restore:
+
+Restore from Backup dropdown (select backup)
+Warning: "This will overwrite current data. Proceed with caution."
+Require confirmation: Type "RESTORE" to confirm
+Restore button (requires admin authentication)
+
+
+
+Tab 10: System Maintenance
+
+System Status:
+
+System Version: v2.4.1
+Last Updated: 2025-09-30
+Uptime: 42 days, 7 hours
+
+
+Scheduled Maintenance:
+
+Next Maintenance Window: 2025-10-20 02:00-04:00 UTC
+Maintenance Type: Security patches and performance optimization
+Expected Downtime: None (rolling update)
+Notify users: ☑️ (email notification 7 days before)
+
+
+System Diagnostics:
+
+Run Full System Check button
+
+Tests all components:
+
+AWS Transfer Family connectivity
+S3 bucket access
+Database connectivity
+Lambda function health
+External API integrations
+Certificate validity
+
+
+Shows results:
+
+✅ All systems operational
+Or detailed error messages if issues found
+
+
+
+
+
+
+Cache Management:
+
+Clear Application Cache button
+Clear CDN Cache button (for static assets)
+Last cache cleared: 2025-10-11 14:30:00 UTC
+
+
+Database Maintenance:
+
+Optimize Database button (runs VACUUM/ANALYZE)
+Last optimization: 2025-10-10 03:00:00 UTC
+Database size: 45 GB
+Unused space: 2.3 GB
+
+
+Log Management:
+
+Application log level: INFO (dropdown: DEBUG/INFO/WARN/ERROR)
+CloudWatch log retention: [30] days
+Download recent logs button (last 24 hours)
+Clear old logs button (>30 days)
+
+
+
+Tab 11: Terms & Conditions
+
+User Agreement:
+
+Terms of Service (rich text editor)
+Privacy Policy (rich text editor)
+Acceptable Use Policy (rich text editor)
+Version number: v2.1
+Last updated: 2025-08-15
+
+
+Acceptance Tracking:
+
+Require users to re-accept after changes: ☑️
+Users pending acceptance: 12
+Send reminder notification: ☑️
+
+
+Save Terms button
+Preview Terms button (opens modal showing user view)
+
+Database Tables Used:
+
+system_settings table (key-value pairs for all settings)
+email_templates table (customizable email templates)
+api_keys table (API key management)
+webhook_endpoints table (webhook configuration)
+integrations table (downstream system connections)
+sso_config table (SSO settings)
+backups table (backup history)
+
+API Calls:
+
+GET /api/v1/admin/settings
+PUT /api/v1/admin/settings/organization (update org profile)
+PUT /api/v1/admin/settings/as2-defaults (update AS2 defaults)
+PUT /api/v1/admin/settings/email-notifications (update email settings)
+PUT /api/v1/admin/settings/retention (update retention policies)
+POST /api/v1/admin/settings/api-keys (generate new API key)
+DELETE /api/v1/admin/settings/api-keys/{keyId} (revoke API key)
+POST /api/v1/admin/settings/webhooks (add webhook)
+POST /api/v1/admin/settings/webhooks/{webhookId}/test (test webhook)
+PUT /api/v1/admin/settings/integrations/{integrationId} (update integration)
+POST /api/v1/admin/settings/integrations/{integrationId}/test (test connection)
+PUT /api/v1/admin/settings/sso (update SSO config)
+POST /api/v1/admin/settings/sso/test (test SSO)
+POST /api/v1/admin/backups/create (manual backup)
+POST /api/v1/admin/backups/{backupId}/restore (restore from backup)
+POST /api/v1/admin/maintenance/system-check (run diagnostics)
+POST /api/v1/admin/maintenance/clear-cache
+PUT /api/v1/admin/settings/terms (update terms)
+
+Backend Integrations:
+
+AWS Systems Manager Parameter Store: Store encrypted settings
+AWS Secrets Manager: Store API keys, credentials
+AWS SES: Email delivery
+AWS S3: Backup storage, file storage
+AWS CloudWatch: Logging and monitoring
+External SSO providers: SAML/OAuth integration
+
+
+Page 28: Integration Settings (/admin/integrations)
+Purpose: Manage external system integrations in detail
+Features & Functionality:
+Section 1: Integration Overview Dashboard
+
+Connected Integrations:
+
+Total integrations: 5
+Active: 4
+Inactive: 1
+Health check passed: 4/4 active
+
+
+Integration Categories:
+
+Pharmacovigilance Systems: 2
+Regulatory Gateways: 2
+Notification Services: 1
+
+
+
+Section 2: Pharmacovigilance System Integrations
+Veeva Vault Safety Integration Card:
+
+Status indicator: 🟢 Connected
+Last sync: 2 minutes ago
+Files routed today: 23
+Success rate: 100%
+Configuration summary:
+
+Vault URL: https://company.veevavault.com
+Target Vault: Safety Vault
+Auto-routing: Enabled
+
+
+Actions:
+
+[Configure] [Test Connection] [View Logs] [Disable]
+
+
+
+Oracle Argus Safety Integration Card:
+
+Status indicator: 🟢 Connected
+Last sync: 15 minutes ago
+Files routed today: 18
+Success rate: 98.3%
+Configuration summary:
+
+Argus URL: https://argus.company.com
+Auto-routing: Enabled
+
+
+Actions:
+
+[Configure] [Test Connection] [View Logs] [Disable]
+
+
+
+ArisGlobal LifeSphere Integration Card:
+
+Status indicator: ⚪ Not Configured
+Click [Configure] to set up
+
+Section 3: Regulatory Gateway Integrations
+FDA ESG Gateway Card:
+
+Status indicator: 🟢 Connected
+Submissions today: 12
+Last submission: 45 minutes ago
+ACK2 receipt rate: 100%
+Configuration:
+
+Gateway URL: https://upload-api-esgng.fda.gov:4080/as2/receive
+AS2 ID: FDA-CDER-AERS
+Certificate status: Valid (expires 2026-06-15)
+
+
+Actions:
+
+[View Partner Details] [Test Connection] [View Submission History]
+
+
+
+EMA EudraVigilance Gateway Card:
+
+Status indicator: 🟢 Connected
+Submissions today: 8
+Last submission: 1 hour ago
+ACK2 receipt rate: 100%
+Configuration:
+
+Gateway URL: https://eudravigilance.ema.europa.eu
+AS2 ID: EMA-EUDRAV-GATEWAY
+Certificate status: Valid (expires 2026-03-20)
+
+
+Actions:
+
+[View Partner Details] [Test Connection] [View Submission History]
+
+
+
+Section 4: Notification & Communication Integrations
+Slack Integration Card:
+
+Status indicator: 🟢 Connected
+Workspace: company.slack.com
+Channel: #as2-notifications
+Events sent today: 47
+Configuration:
+
+Webhook URL: https://hooks.slack.com/services/T00000000/... (truncated)
+Notification types:
+
+☑️ Critical alerts
+☑️ MDN timeouts
+☑️ Certificate expiry warnings
+☐ Successful transmissions (too noisy)
+
+
+
+
+Actions:
+
+[Configure] [Test Notification] [Disconnect]
+
+
+
+Microsoft Teams Integration Card:
+
+Status indicator: ⚪ Not Configured
+Click [Configure] to connect Teams
+
+PagerDuty Integration Card:
+
+Status indicator: ⚪ Not Configured
+For critical alert escalation
+Click [Configure] to set up
+
+Section 5: Add New Integration
+
+Button: "+ Add Integration"
+Opens modal with integration catalog:
+Pharmacovigilance Systems:
+
+Veeva Vault Safety
+Oracle Argus Safety
+ArisGlobal LifeSphere
+ENNOV Safety Suite
+Sparta Systems TrackWise
+Custom PV System (REST API)
+
+Regulatory Gateways:
+
+Health Canada CVP
+MHRA Yellow Card (UK)
+TGA (Australia)
+PMDA (Japan)
+Custom Gateway
+
+Cloud Storage:
+
+Additional S3 Buckets
+Azure Blob Storage
+Google Cloud Storage
+SharePoint Online
+
+Notification Services:
+
+Slack
+Microsoft Teams
+PagerDuty
+Email (SMTP)
+SMS (Twilio)
+
+Analytics & Monitoring:
+
+Datadog
+New Relic
+Splunk
+Custom Webhook
+
+
+Select integration type → opens configuration wizard
+
+Section 6: Integration Detail View
+(Click [Configure] on any integration card)
+Example: Veeva Vault Safety Configuration
+Tab 1: Connection Settings
+
+Basic Information:
+
+Integration Name: Veeva Vault Safety (editable)
+Integration Type: Pharmacovigilance System (read-only)
+Status: Active (toggle: Active/Inactive)
+
+
+Vault Connection:
+
+Vault URL: https://company.veevavault.com
+API Version: v23.1 (dropdown)
+Default Vault: Safety Vault (dropdown, populated from API)
+Default Object Type: Case (dropdown)
+
+
+Authentication:
+
+Auth Method: OAuth 2.0 (dropdown: OAuth 2.0 / API Key / Basic Auth)
+OAuth Token Endpoint: https://company.veevavault.com/auth/oauth2/token
+Client ID: [encrypted text field]
+Client Secret: [hidden, dots displayed]
+Show/Hide button
+Refresh Token: Auto-managed ✅
+Token expires: 2025-10-12 18:45:32 UTC
+
+
+Test Connection button
+
+Shows result:
+
+✅ Connection successful
+Vault version: 23.1.2
+Available vaults: Safety Vault, Quality Vault
+Available objects: Case, ICSR, Product
+
+
+
+
+Save Connection Settings button
+
+Tab 2: Routing Rules
+
+Automatic Routing:
+
+Enable auto-routing: ☑️
+Route files immediately upon receipt: ☑️
+Or schedule routing: ☐ (run every X minutes)
+
+
+Routing Conditions:
+
+Table showing routing rules:
+
+Priority
+Condition (drag to reorder)
+Target Vault
+Target Object Type
+Enabled
+Actions (Edit/Delete)
+
+
+
+Example rules:
+
+If partner = "Pfizer" → Route to Safety Vault → Object: ICSR → ✅ Enabled
+If validation = "passed" → Route to Safety Vault → Object: Case → ✅ Enabled
+If filename contains "SAE" → Route to Safety Vault → Object: Serious AE → ✅ Enabled
+
+
+Add Routing Rule Button:
+
+Opens modal:
+
+Rule name
+Conditions (if/then logic):
+
+If [Partner] [equals] [Pfizer]
+AND [Validation Status] [equals] [passed]
+AND [File Type] [equals] [E2B(R3)]
+
+
+Target configuration:
+
+Vault: Safety Vault
+Object Type: ICSR
+Field mapping (see Tab 3)
+
+
+Priority: [1] (lower number = higher priority)
+Enabled: ☑️
+Save Rule button
+
+
+
+
+
+Tab 3: Field Mapping
+
+Map AS2 Message Fields to Veeva Fields:
+
+Table showing field mappings:
+
+AS2 Field → Veeva Field → Transformation → Status
+
+
+
+Example mappings:
+
+message_id → external_id → None → ✅ Mapped
+filename → document_name → None → ✅ Mapped
+partner_name → sender_organization → None → ✅ Mapped
+received_date → receipt_date → Format: ISO 8601 → ✅ Mapped
+file_content → attachment → Base64 encode → ✅ Mapped
+
+
+Add Field Mapping Button:
+
+Opens modal:
+
+Source Field (dropdown: AS2 message fields)
+Target Field (dropdown: Veeva object fields, dynamically loaded)
+Transformation (dropdown):
+
+None (direct mapping)
+Date Format (configure format)
+Text Transform (uppercase/lowercase/trim)
+Base64 Encode/Decode
+JSON Path Extract
+Custom Lambda Function
+
+
+Default Value (if source is empty)
+Required: ☑️
+Save Mapping button
+
+
+
+
+Default Values:
+
+Set default values for Veeva fields not mapped from AS2:
+
+status: "New"
+lifecycle_state: "Draft"
+classification: "ICSR"
+
+
+
+
+Import Field Mapping Template (JSON upload)
+Export Field Mapping Template (JSON download)
+Save Field Mappings button
+
+Tab 4: Error Handling
+
+Retry Policy:
+
+Enable auto-retry on failure: ☑️
+Max retry attempts: [3]
+Retry interval: [5] minutes
+Exponential backoff: ☑️
+
+
+Failure Actions:
+
+On routing failure:
+
+☑️ Send email notification to: ops@company.com
+☑️ Create alert in system
+☐ Move file to error queue
+☑️ Log detailed error in CloudWatch
+
+
+
+
+Fallback Behavior:
+
+If Veeva unreachable, store file locally: ☑️
+Retry when Veeva becomes available: ☑️
+Max local storage time: [24] hours
+After max time, escalate to: admin@company.com
+
+
+
+Tab 5: Activity Log
+
+Recent integration activity:
+
+Timestamp
+Action (File Routed / Connection Tested / Config Changed / Error Occurred)
+Details
+Result (Success/Failure)
+User (if manual action)
+
+
+Export Activity Log (CSV)
+Filter by action type, date range
+
+Tab 6: Performance Metrics
+
+Charts:
+
+Files routed over time (line chart, last 30 days)
+Success vs. failure rate (pie chart)
+Average routing time (gauge: currently 1.2 seconds)
+
+
+Statistics:
+
+Total files routed (all time): 12,847
+Success rate: 99.4%
+Average routing time: 1.2 seconds
+Fastest routing: 0.8 seconds
+Slowest routing: 45.3 seconds (with retry)
+
+
+Recent Failures:
+
+Table showing last 10 failures with error messages
+Click to view full details and retry
+
+
+
+Actions at bottom of all tabs:
+
+Save Configuration button
+Test Integration button (runs full end-to-end test)
+Disable Integration button
+Delete Integration button (confirmation required)
+
+Section 7: Integration Templates
+
+Pre-built Configuration Templates:
+
+Import template button
+Templates available:
+
+Veeva Vault - Standard ICSR Routing
+Oracle Argus - E2B(R3) Import
+FDA ESG - Submission Workflow
+EMA EudraVigilance - Submission Workflow
+
+
+Select template → auto-fills configuration
+Customize as needed
+
+
+Export Current Configuration:
+
+Export as JSON template
+Share with other organizations
+Version control for configuration
+
+
+
+Section 8: Integration Health Monitor
+
+Real-time health dashboard for all integrations:
+
+Green: All healthy
+Yellow: Some warnings
+Red: Critical issues
+
+
+Health Checks:
+
+Connectivity test (every 5 minutes)
+Authentication token validity
+API rate limit status
+Response time monitoring
+Error rate tracking
+
+
+Alerts:
+
+Integration unreachable for >15 minutes
+Authentication failure
+High error rate (>5% in 1 hour)
+Slow response time (>10 seconds)
+
+
+
+Database Tables Used:
+
+integrations table (integration_id, name, type, status, config_json)
+integration_routing_rules table (rule_id, integration_id, conditions, target, priority)
+integration_field_mappings table (mapping_id, integration_id, source_field, target_field, transformation)
+integration_activity_log table (activity_id, integration_id, action, timestamp, result, details)
+integration_health table (integration_id, last_check, status, response_time, error_count)
+
+API Calls:
+
+GET /api/v1/admin/integrations
+POST /api/v1/admin/integrations (create new integration)
+GET /api/v1/admin/integrations/{integrationId}
+PUT /api/v1/admin/integrations/{integrationId} (update config)
+DELETE /api/v1/admin/integrations/{integrationId}
+POST /api/v1/admin/integrations/{integrationId}/test (test connection)
+GET /api/v1/admin/integrations/{integrationId}/activity (activity log)
+GET /api/v1/admin/integrations/{integrationId}/metrics (performance data)
+POST /api/v1/admin/integrations/{integrationId}/routing-rules (add rule)
+POST /api/v1/admin/integrations/{integrationId}/field-mappings (add mapping)
+GET /api/v1/admin/integrations/health (health status of all integrations)
+
+Backend Integrations:
+
+AWS Step Functions: Orchestrate complex routing workflows
+AWS Lambda: Execute routing logic and transformations
+AWS Secrets Manager: Store integration credentials securely
+AWS EventBridge: Trigger routing based on events
+External APIs: Veeva, Argus, regulatory gateways
+
+
+📊 SUMMARY: COMPLETE PAGE COUNT
+Total Pages: 28 Pages
+Breakdown by Section:
+
+Authentication & Access: 3 pages (Login, Register, Dashboard)
+Partner Management: 5 pages (Directory, Add Partner, Partner Details, Test Connection, Certificate Rotation)
+Certificate Management: 3 pages (Certificate Vault, Your Certificates, Certificate Detail)
+File Transmission: 4 pages (Send File, Batch Upload, Outbox, Outbox Message Detail)
+File Reception: 3 pages (Inbox, Inbox Message Detail, Message Center)
+Monitoring & Observability: 4 pages (Transmission Dashboard, Reconciliation, Alerts, System Health)
+Compliance & Audit: 3 pages (Audit Trail, Compliance Reports, Regulatory Submission Manager)
+Configuration & Administration: 3 pages (User Management, System Settings, Integration Settings)
+
+
+🗄️ DATABASE TABLES REQUIRED
+Core Tables: 35+ tables
+
+users - User accounts and authentication
+tenants - Multi-tenant organization data
+sessions - Active user sessions
+login_attempts - Security tracking
+email_verifications - Registration verification
+roles - User role definitions
+role_permissions - Role-based access control
+user_permissions - User-specific permissions
+user_invitations - Pending user invitations
+partners - Trading partner records
+partner_config - AS2 configuration per partner
+partner_tests - Connection test history
+certificates - All certificates (yours + partners)
+certificate_rotation_schedule - Planned rotations
+certificate_usage - Track cert usage
+messages - All AS2 messages (sent + received)
+message_metadata - E2B metadata extracted
+message_timeline - Status change history
+message_errors - Error details
+message_notes - Internal notes
+as2_headers - Full AS2 header storage
+mdn_receipts - MDN acknowledgments
+business_acks - Business ACK2 records
+mic_verifications - MIC hash verification
+validation_results - E2B validation details
+routing_status - Downstream routing tracking
+routing_logs - Routing history
+batch_uploads - Batch upload tracking
+batch_files - Individual files in batch
+alerts - System alerts
+alert_rules - Alert configuration
+alert_notifications - Notification log
+alert_history - Alert status changes
+audit_logs - Compliance audit trail
+audit_log_chain - Integrity verification hashes
+reports - Generated report metadata
+report_templates - Custom report templates
+scheduled_reports - Recurring reports
+report_generation_log - Performance tracking
+regulatory_submissions - Submission tracking
+submission_messages - Links submissions to messages
+submission_documents - Supporting documents
+submission_communications - Agency communication log
+submission_notes - Internal submission notes
+submission_timeline - Submission status history
+system_settings - Global configuration
+email_templates - Customizable email templates
+api_keys - API access keys
+webhook_endpoints - Webhook configuration
+integrations - External system integrations
+integration_routing_rules - Routing rule definitions
+integration_field_mappings - Field mapping configuration
+integration_activity_log - Integration activity
+integration_health - Health monitoring
+sso_config - SSO configuration
+backups - Backup history
+system_health - Health check results
+service_status - Component status
+incidents - Incident history
+maintenance_windows - Scheduled maintenance
+
+
+This completes the comprehensive page-by-page breakdown of your AS2 Pharmacovigilance Portal! Each page includes detailed features, database tables, API calls, and user workflows. Would you like me to create visual wireframes or dive deeper into any specific page?

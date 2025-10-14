@@ -20,7 +20,7 @@ const quickActions = [
     description: 'Send ICSR or other files to partners',
     href: '/send',
     icon: Send,
-    color: 'bg-blue-500 hover:bg-blue-600',
+    color: 'bg-primary hover:bg-primary/90',
     primary: true
   },
   {

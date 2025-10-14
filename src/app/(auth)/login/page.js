@@ -177,21 +177,24 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-4">
             <FadeIn delay={500}>
-              <AnimatedButton 
+              <Button 
                 type="submit" 
-                className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-medium py-3 transition-colors-minimal" 
+                variant="ocean"
+                size="lg"
+                className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify Code
-              </AnimatedButton>
+              </Button>
             </FadeIn>
 
             <FadeIn delay={600}>
               <Button
                 type="button"
-                variant="ghost"
-                className="w-full text-ocean-600 hover:text-ocean-700 hover:bg-ocean-50 dark:text-ocean-400 dark:hover:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+                variant="ocean-ghost"
+                size="lg"
+                className="w-full h-12 text-base font-medium"
                 onClick={() => setShowMFA(false)}
                 disabled={isLoading}
               >
@@ -325,14 +328,16 @@ export default function LoginPage() {
 
         <CardFooter className="flex flex-col space-y-4">
           <FadeIn delay={700}>
-            <AnimatedButton
+            <Button
               type="submit"
-              className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-medium py-3 transition-colors-minimal"
+              variant="ocean"
+              size="lg"
+              className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
               disabled={isLoading || loginAttempts >= 5}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
-            </AnimatedButton>
+            </Button>
           </FadeIn>
 
           <FadeIn delay={800}>
@@ -351,8 +356,9 @@ export default function LoginPage() {
           <FadeIn delay={900}>
             <Button
               type="button"
-              variant="outline"
-              className="w-full border-ocean-200 text-ocean-700 hover:bg-ocean-50 dark:border-ocean-700 dark:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+              variant="ocean-outline"
+              size="lg"
+              className="w-full h-12 text-base font-medium"
               onClick={handleSSO}
               disabled={isLoading}
             >

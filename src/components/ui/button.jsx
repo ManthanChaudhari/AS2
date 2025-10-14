@@ -19,14 +19,15 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
-        ocean: "bg-ocean-600 text-white hover:bg-ocean-700 focus-visible:ring-ocean-500/20 dark:focus-visible:ring-ocean-400/40",
-        "ocean-outline": "border border-ocean-200 dark:border-ocean-700 text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 hover:text-ocean-800 dark:hover:text-ocean-200",
+        ocean: "bg-ocean-600 text-white hover:bg-ocean-700 focus-visible:ring-ocean-500/20 dark:focus-visible:ring-ocean-400/40 shadow-md hover:shadow-lg active:shadow-sm",
+        "ocean-outline": "border-2 border-ocean-300 dark:border-ocean-600 text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 hover:text-ocean-800 dark:hover:text-ocean-200 hover:border-ocean-400 dark:hover:border-ocean-500",
         "ocean-ghost": "text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 hover:text-ocean-800 dark:hover:text-ocean-200",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        lg: "h-12 rounded-md px-8 has-[>svg]:px-6 text-base",
+        xl: "h-14 rounded-lg px-10 has-[>svg]:px-8 text-lg",
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",

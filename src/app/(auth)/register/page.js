@@ -251,9 +251,9 @@ export default function RegisterPage() {
           </FadeIn>
 
           <FadeIn delay={400}>
-            <AnimatedButton asChild className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-medium py-3 transition-colors-minimal">
+            <Button asChild variant="ocean" size="lg" className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
               <Link href="/login">Continue to Login</Link>
-            </AnimatedButton>
+            </Button>
           </FadeIn>
         </CardContent>
       </MinimalCard>
@@ -593,10 +593,11 @@ export default function RegisterPage() {
 
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="ocean-ghost"
+                  size="default"
                   onClick={resendVerification}
                   disabled={isLoading}
-                  className="text-ocean-600 hover:text-ocean-700 hover:bg-ocean-50 dark:text-ocean-400 dark:hover:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+                  className="font-medium"
                 >
                   Resend verification code
                 </Button>
@@ -707,10 +708,11 @@ export default function RegisterPage() {
           <FadeIn delay={500}>
             <Button
               type="button"
-              variant="outline"
+              variant="ocean-outline"
+              size="lg"
               onClick={goBack}
               disabled={currentStep === 1 || isLoading}
-              className="border-ocean-200 text-ocean-700 hover:bg-ocean-50 dark:border-ocean-700 dark:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+              className="h-12 text-base font-medium"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -718,15 +720,17 @@ export default function RegisterPage() {
           </FadeIn>
 
           <FadeIn delay={600}>
-            <AnimatedButton 
+            <Button 
               type="submit" 
+              variant="ocean"
+              size="lg"
               disabled={isLoading}
-              className="bg-ocean-600 hover:bg-ocean-700 text-white font-medium transition-colors-minimal"
+              className="h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {currentStep === 4 ? "Complete Registration" : "Continue"}
               {currentStep < 4 && <ArrowRight className="ml-2 h-4 w-4" />}
-            </AnimatedButton>
+            </Button>
           </FadeIn>
         </div>
       </form>

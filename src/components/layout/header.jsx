@@ -150,7 +150,7 @@ function NotificationDropdown() {
                   <div className="flex items-center space-x-2">
                     <span className="font-medium text-sm">{notification.title}</span>
                     {notification.unread && (
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                      <div className="h-2 w-2 rounded-full bg-primary" />
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -185,7 +185,7 @@ function UserDropdown() {
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback className="bg-blue-100">{userData.initials}</AvatarFallback>
+            <AvatarFallback className="bg-blue-100 text-primary">{userData.initials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

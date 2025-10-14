@@ -4,42 +4,61 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Set brand primary to vivid blue to match the provided sidebar reference */
-  --primary: oklch(0.67 0.19 245);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  /* Use blue ring for focus/active outlines */
-  --ring: oklch(0.67 0.12 245);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* ====== Base ====== */
+  --background: #f9fbff; /* very light blue */
+  --foreground: #0f172a; /* slate-900 */
+
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+
+  /* ====== Primary (Main Ocean Blue) ====== */
+  --primary: #2563eb; /* blue-600 */
+  --primary-foreground: #f8fafc; /* almost white */
+
+  /* ====== Secondary (Light Blues & Accents) ====== */
+  --secondary: #dbeafe; /* blue-100 */
+  --secondary-foreground: #1e40af; /* blue-800 */
+
+  --muted: #eff6ff; /* blue-50 */
+  --muted-foreground: #475569; /* slate-600 */
+
+  --accent: #93c5fd; /* blue-300 */
+  --accent-foreground: #1e3a8a; /* blue-900 */
+
+  /* ====== Alerts ====== */
+  --destructive: #ef4444; /* red-500 */
+  --destructive-foreground: #fef2f2; /* red-50 */
+
+  /* ====== UI Tokens ====== */
+  --border: #bfdbfe; /* blue-200 */
+  --input: #bfdbfe; /* blue-200 */
+  --ring: #2563eb; /* blue-600 (for focus outlines) */
+
+  /* ====== Charts ====== */
+  --chart-1: #2563eb;
+  --chart-2: #1d4ed8;
+  --chart-3: #3b82f6;
+  --chart-4: #60a5fa;
+  --chart-5: #93c5fd;
+
+  /* ====== Layout ====== */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  /* Align sidebar tokens with brand blue for active pill, icon tint, and indicator */
-  --sidebar-primary: oklch(0.67 0.19 245);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.67 0.08 245);
+
+  /* ====== Sidebar ====== */
+  --sidebar: #f8fafc; /* very light blue background */
+  --sidebar-foreground: #1e3a8a; /* deep blue text */
+
+  --sidebar-primary: #2563eb; /* solid blue (Admin Dashboard color) */
+  --sidebar-primary-foreground: #ffffff;
+
+  --sidebar-accent: #e0f2fe; /* blue-100 hover color */
+  --sidebar-accent-foreground: #1e40af;
+
+  --sidebar-border: #bfdbfe; /* blue-200 */
+  --sidebar-ring: #2563eb; /* blue-600 */
 }
 
 .dark {

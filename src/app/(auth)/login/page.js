@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { useRouter } from 'next/navigation'
 
 // Validation schema
 const loginSchema = z.object({
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loginAttempts, setLoginAttempts] = useState(0)
+  const router = useRouter();
 
   // Login form
   const loginForm = useForm({
@@ -58,13 +60,9 @@ export default function LoginPage() {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Simulate MFA requirement for demo
-      if (data.email.includes('mfa')) {
-        setShowMFA(true)
-        setIsLoading(false)
-        return
-      }
+
+      setShowMFA(true)
+      setIsLoading(false)
 
       // Simulate login failure for demo
       if (data.password === 'wrong') {
@@ -74,11 +72,11 @@ export default function LoginPage() {
 
       // Success - redirect to dashboard
       console.log('Login successful:', data)
-      // In real app: router.push('/dashboard')
-      
+      router.push('/dashboard')
+
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.')
-      
+
       // Account lockout simulation
       if (loginAttempts >= 4) {
         setError('Account locked due to too many failed attempts. Please contact support.')
@@ -95,7 +93,7 @@ export default function LoginPage() {
     try {
       // Simulate MFA verification
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       if (data.mfaCode !== '123456') {
         throw new Error('Invalid MFA code')
       }
@@ -103,7 +101,7 @@ export default function LoginPage() {
       // Success - redirect to dashboard
       console.log('MFA verification successful')
       // In real app: router.push('/dashboard')
-      
+
     } catch (err) {
       setError(err.message || 'MFA verification failed')
     } finally {
@@ -157,9 +155,9 @@ export default function LoginPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -204,7 +202,7 @@ export default function LoginPage() {
           {loginAttempts > 0 && loginAttempts < 5 && (
             <Alert>
               <AlertDescription>
-                Warning: {loginAttempts} failed login attempt{loginAttempts > 1 ? 's' : ''}. 
+                Warning: {loginAttempts} failed login attempt{loginAttempts > 1 ? 's' : ''}.
                 Account will be locked after 5 attempts.
               </AlertDescription>
             </Alert>
@@ -279,9 +277,9 @@ export default function LoginPage() {
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            type="submit" 
-            className="w-full" 
+          <Button
+            type="submit"
+            className="w-full"
             disabled={isLoading || loginAttempts >= 5}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

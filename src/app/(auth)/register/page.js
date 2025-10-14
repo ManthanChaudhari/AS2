@@ -1,16 +1,16 @@
 'use client'
 
-import React,{ useState } from 'react'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import Link from 'next/link'
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  FileCheck, 
-  CheckCircle, 
+import {
+  Building2,
+  User,
+  Mail,
+  FileCheck,
+  CheckCircle,
   Loader2,
   ArrowLeft,
   ArrowRight
@@ -41,23 +41,29 @@ const step2Schema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
-      'Password must contain uppercase, lowercase, number and special character'),
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
+      'Password must contain uppercase, lowercase, number and special character'
+    ),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
-})
+});
 
 const step3Schema = z.object({
   verificationCode: z.string().length(6, 'Verification code must be 6 digits')
 })
 
 const step4Schema = z.object({
-  acceptTerms: z.boolean().refine(val => val === true, 'You must accept the terms of service'),
-  acceptPrivacy: z.boolean().refine(val => val === true, 'You must accept the privacy policy'),
-  signature: z.string().min(2, 'Please provide your digital signature')
-})
+  acceptTerms: z.coerce.boolean().refine(val => val === true, {
+    message: 'You must accept the terms of service',
+  }),
+  acceptPrivacy: z.coerce.boolean().refine(val => val === true, {
+    message: 'You must accept the privacy policy',
+  }),
+  signature: z.string().min(2, 'Please provide your digital signature'),
+});
 
 // Dummy data
 const countries = [
@@ -229,8 +235,8 @@ export default function RegisterPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-              {React.createElement(steps[currentStep - 1].icon, { 
-                className: "h-4 w-4 text-blue-600 dark:text-blue-400" 
+              {React.createElement(steps[currentStep - 1].icon, {
+                className: "h-4 w-4 text-blue-600 dark:text-blue-400"
               })}
             </div>
             <div>
@@ -249,7 +255,7 @@ export default function RegisterPage() {
           <Progress value={(currentStep / 4) * 100} className="w-full" />
           <div className="flex justify-between text-xs text-muted-foreground">
             {steps.map((step) => (
-              <span 
+              <span
                 key={step.number}
                 className={currentStep >= step.number ? 'text-primary' : ''}
               >
@@ -506,7 +512,8 @@ export default function RegisterPage() {
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="acceptTerms"
-                    {...step4Form.register('acceptTerms')}
+                    checked={step4Form.watch('acceptTerms')}
+                    onCheckedChange={(checked) => step4Form.setValue('acceptTerms', checked)}
                     disabled={isLoading}
                   />
                   <div className="grid gap-1.5 leading-none">
@@ -527,7 +534,8 @@ export default function RegisterPage() {
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="acceptPrivacy"
-                    {...step4Form.register('acceptPrivacy')}
+                    checked={step4Form.watch('acceptPrivacy')}
+                    onCheckedChange={(checked) => step4Form.setValue('acceptPrivacy', checked)}
                     disabled={isLoading}
                   />
                   <div className="grid gap-1.5 leading-none">

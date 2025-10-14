@@ -60,59 +60,84 @@ const statsData = [
 ]
 
 function StatsCard({ stat }) {
-  const Icon = stat.icon
+  const Icon = stat.icon;
   
   const getTrendIcon = () => {
     if (stat.changeType === 'increase') {
-      return <TrendingUp className="h-3 w-3 text-green-600" />
+      return <TrendingUp className="h-3 w-3" />;
     } else if (stat.changeType === 'decrease') {
-      return <TrendingDown className="h-3 w-3 text-red-600" />
+      return <TrendingDown className="h-3 w-3" />;
     } else {
-      return <Minus className="h-3 w-3 text-gray-600" />
+      return <Minus className="h-3 w-3" />;
     }
-  }
+  };
 
   const getChangeColor = () => {
     if (stat.changeType === 'increase') {
-      return 'text-green-600 dark:text-green-400'
+      return 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/30';
     } else if (stat.changeType === 'decrease') {
-      return 'text-red-600 dark:text-red-400'
+      return 'text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/30';
     } else {
-      return 'text-gray-600 dark:text-gray-400'
+      return 'text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-950/30';
     }
-  }
+  };
 
   return (
-    <Card className="relative overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {stat.title}
-        </CardTitle>
-        <div className={`rounded-full p-2 ${stat.bgColor}`}>
-          <Icon className={`h-4 w-4 ${stat.color}`} />
-        </div>
-        {stat.alert && stat.value > 10 && (
-          <Badge variant="destructive" className="absolute top-2 right-2">
+    <div className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+      {/* Gradient background accent */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:to-slate-800/20" />
+      
+      {/* Alert Badge */}
+      {/* {stat.alert && stat.value > 10 && (
+        <div className="absolute top-4 right-4 z-10">
+          <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-800 dark:bg-rose-950 dark:text-rose-200">
             Alert
-          </Badge>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-baseline space-x-2">
-          <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
+          </span>
+        </div>
+      )}
+       */}
+      {/* Header */}
+      <div className="relative flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            {stat.title}
+          </h3>
+          {/* Alert Badge - positioned below title */}
+          {stat.alert && stat.value > 10 && (
+            <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-800 dark:bg-rose-950 dark:text-rose-200 mt-1.5">
+              Alert
+            </span>
+          )}
+        </div>
+        <div className={`rounded-lg p-2.5 transition-transform duration-300 group-hover:scale-110 ${stat.bgColor}`}>
+          <Icon className={`h-5 w-5 ${stat.color}`} />
+        </div>
+      </div>
+      
+      {/* Value and Change */}
+      <div className="relative">
+        <div className="flex items-end justify-between">
+          <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 transition-all duration-300 group-hover:scale-105">
+            {stat.value.toLocaleString()}
+          </div>
           {stat.change !== 0 && (
-            <div className={`flex items-center space-x-1 text-xs ${getChangeColor()}`}>
+            <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getChangeColor()}`}>
               {getTrendIcon()}
               <span>{Math.abs(stat.change)}%</span>
             </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        
+        {/* Description */}
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
           {stat.description}
         </p>
-      </CardContent>
-    </Card>
-  )
+      </div>
+      
+      {/* Bottom accent line */}
+      <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.changeType === 'increase' ? 'from-emerald-500 to-emerald-600' : stat.changeType === 'decrease' ? 'from-rose-500 to-rose-600' : 'from-slate-400 to-slate-500'} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
+    </div>
+  );
 }
 
 export function StatsCards() {

@@ -185,7 +185,7 @@ function UserDropdown() {
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback>{userData.initials}</AvatarFallback>
+            <AvatarFallback className="bg-blue-100">{userData.initials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

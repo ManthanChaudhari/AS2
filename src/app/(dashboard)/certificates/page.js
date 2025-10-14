@@ -40,23 +40,38 @@ const certificateStats = [
 ]
 
 function StatCard({ stat }) {
-  const Icon = stat.icon
-  
+  const Icon = stat.icon;
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <div className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+      {/* Gradient background accent */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:to-slate-800/20" />
+
+      {/* Header */}
+      <div className="relative flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">
           {stat.title}
-        </CardTitle>
-        <div className={`rounded-full p-2 ${stat.bgColor}`}>
-          <Icon className={`h-4 w-4 ${stat.color}`} />
+        </h3>
+        <div
+          className={`rounded-lg p-2.5 transition-transform duration-300 group-hover:scale-110 ${stat.bgColor}`}
+        >
+          <Icon className={`h-5 w-5 ${stat.color}`} />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{stat.value}</div>
-      </CardContent>
-    </Card>
-  )
+      </div>
+
+      {/* Value */}
+      <div className="relative">
+        <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 transition-all duration-300 group-hover:scale-105">
+          {stat.value}
+        </div>
+      </div>
+
+      {/* Bottom accent line */}
+      <div
+        className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-400 to-slate-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+      />
+    </div>
+  );
 }
 
 export default function CertificatesPage() {

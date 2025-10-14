@@ -1,73 +1,83 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import Link from 'next/link'
-import { Eye, EyeOff, Shield, Loader2 } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import Link from "next/link";
+import { Eye, EyeOff, Shield, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  rememberMe: z.boolean().default(false)
-})
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  rememberMe: z.boolean().default(false),
+});
 
 const mfaSchema = z.object({
-  mfaCode: z.string().length(6, 'MFA code must be 6 digits').regex(/^\d+$/, 'MFA code must contain only numbers')
-})
+  mfaCode: z
+    .string()
+    .length(6, "MFA code must be 6 digits")
+    .regex(/^\d+$/, "MFA code must contain only numbers"),
+});
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showMFA, setShowMFA] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [loginAttempts, setLoginAttempts] = useState(0)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showMFA, setShowMFA] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [loginAttempts, setLoginAttempts] = useState(0);
   const router = useRouter();
 
   // Login form
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
-      rememberMe: false
-    }
-  })
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
 
   // MFA form
   const mfaForm = useForm({
     resolver: zodResolver(mfaSchema),
     defaultValues: {
-      mfaCode: ''
-    }
-  })
+      mfaCode: "",
+    },
+  });
 
   const onLoginSubmit = async (data) => {
-    setIsLoading(true)
-    setError('')
+    setIsLoading(true);
+    setError("");
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      setShowMFA(true)
-      setIsLoading(false)
+      // Simulate MFA requirement for demo
+      setShowMFA(true);
+      setIsLoading(false);
 
       // Simulate login failure for demo
-      if (data.password === 'wrong') {
-        setLoginAttempts(prev => prev + 1)
-        throw new Error('Invalid email or password')
+      if (data.password === "wrong") {
+        setLoginAttempts((prev) => prev + 1);
+        throw new Error("Invalid email or password");
       }
 
       // Success - redirect to dashboard
@@ -79,40 +89,37 @@ export default function LoginPage() {
 
       // Account lockout simulation
       if (loginAttempts >= 4) {
-        setError('Account locked due to too many failed attempts. Please contact support.')
+        setError(
+          "Account locked due to too many failed attempts. Please contact support."
+        );
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const onMFASubmit = async (data) => {
-    setIsLoading(true)
-    setError('')
+    setIsLoading(true);
+    setError("");
 
     try {
       // Simulate MFA verification
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      if (data.mfaCode !== '123456') {
-        throw new Error('Invalid MFA code')
-      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Success - redirect to dashboard
-      console.log('MFA verification successful')
-      // In real app: router.push('/dashboard')
-
+      console.log("MFA verification successful");
+      router.push("/dashboard");
     } catch (err) {
-      setError(err.message || 'MFA verification failed')
+      setError(err.message || "MFA verification failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSSO = () => {
-    console.log('SSO login initiated')
+    console.log("SSO login initiated");
     // In real app: redirect to SSO provider
-  }
+  };
 
   if (showMFA) {
     return (
@@ -121,7 +128,9 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <CardTitle className="text-2xl">Multi-Factor Authentication</CardTitle>
+          <CardTitle className="text-2xl">
+            Multi-Factor Authentication
+          </CardTitle>
           <CardDescription>
             Enter the 6-digit code from your authenticator app
           </CardDescription>
@@ -143,7 +152,7 @@ export default function LoginPage() {
                 placeholder="000000"
                 maxLength={6}
                 className="text-center text-lg tracking-widest"
-                {...mfaForm.register('mfaCode')}
+                {...mfaForm.register("mfaCode")}
                 disabled={isLoading}
               />
               {mfaForm.formState.errors.mfaCode && (
@@ -155,11 +164,7 @@ export default function LoginPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Verify Code
             </Button>
@@ -176,7 +181,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Card>
-    )
+    );
   }
 
   return (
@@ -202,8 +207,9 @@ export default function LoginPage() {
           {loginAttempts > 0 && loginAttempts < 5 && (
             <Alert>
               <AlertDescription>
-                Warning: {loginAttempts} failed login attempt{loginAttempts > 1 ? 's' : ''}.
-                Account will be locked after 5 attempts.
+                Warning: {loginAttempts} failed login attempt
+                {loginAttempts > 1 ? "s" : ""}. Account will be locked after 5
+                attempts.
               </AlertDescription>
             </Alert>
           )}
@@ -214,7 +220,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               placeholder="user@company.com"
-              {...loginForm.register('email')}
+              {...loginForm.register("email")}
               disabled={isLoading}
             />
             {loginForm.formState.errors.email && (
@@ -229,9 +235,9 @@ export default function LoginPage() {
             <div className="relative">
               <Input
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                {...loginForm.register('password')}
+                {...loginForm.register("password")}
                 disabled={isLoading}
               />
               <Button
@@ -260,7 +266,7 @@ export default function LoginPage() {
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="rememberMe"
-                {...loginForm.register('rememberMe')}
+                {...loginForm.register("rememberMe")}
                 disabled={isLoading}
               />
               <Label htmlFor="rememberMe" className="text-sm">
@@ -308,7 +314,7 @@ export default function LoginPage() {
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
-            New organization?{' '}
+            New organization?{" "}
             <Link
               href="/register"
               className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
@@ -319,5 +325,5 @@ export default function LoginPage() {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

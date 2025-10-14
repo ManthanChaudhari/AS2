@@ -12,6 +12,8 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { MinimalCard } from '@/components/ui/minimal-animations'
+import { FadeIn } from '@/components/ui/animations'
 
 // Dummy stats data
 const statsData = [
@@ -21,8 +23,8 @@ const statsData = [
     change: +12.5,
     changeType: 'increase',
     icon: Send,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 dark:bg-blue-900',
+    color: 'text-ocean-600 dark:text-ocean-400',
+    bgColor: 'bg-ocean-100 dark:bg-ocean-900',
     description: 'vs yesterday'
   },
   {
@@ -31,7 +33,7 @@ const statsData = [
     change: +8.2,
     changeType: 'increase',
     icon: Inbox,
-    color: 'text-green-600',
+    color: 'text-green-600 dark:text-green-400',
     bgColor: 'bg-green-100 dark:bg-green-900',
     description: 'vs yesterday'
   },
@@ -41,7 +43,7 @@ const statsData = [
     change: -2.1,
     changeType: 'decrease',
     icon: AlertTriangle,
-    color: 'text-orange-600',
+    color: 'text-orange-600 dark:text-orange-400',
     bgColor: 'bg-orange-100 dark:bg-orange-900',
     description: 'awaiting response',
     alert: true
@@ -52,7 +54,7 @@ const statsData = [
     change: 0,
     changeType: 'neutral',
     icon: Shield,
-    color: 'text-red-600',
+    color: 'text-red-600 dark:text-red-400',
     bgColor: 'bg-red-100 dark:bg-red-900',
     description: 'expiring in <30 days',
     alert: true
@@ -83,12 +85,12 @@ function StatsCard({ stat }) {
   }
 
   return (
-    <Card className="relative overflow-hidden">
+    <MinimalCard hoverable className="relative overflow-hidden border-ocean-200 dark:border-ocean-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-medium text-ocean-700 dark:text-ocean-300">
           {stat.title}
         </CardTitle>
-        <div className={`rounded-full p-2 ${stat.bgColor}`}>
+        <div className={`rounded-full p-2 ${stat.bgColor} ring-1 ring-ocean-200 dark:ring-ocean-700`}>
           <Icon className={`h-4 w-4 ${stat.color}`} />
         </div>
         {stat.alert && stat.value > 10 && (
@@ -99,7 +101,7 @@ function StatsCard({ stat }) {
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline space-x-2">
-          <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-ocean-800 dark:text-ocean-200">{stat.value.toLocaleString()}</div>
           {stat.change !== 0 && (
             <div className={`flex items-center space-x-1 text-xs ${getChangeColor()}`}>
               {getTrendIcon()}
@@ -107,11 +109,11 @@ function StatsCard({ stat }) {
             </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-ocean-600 dark:text-ocean-400 mt-1">
           {stat.description}
         </p>
       </CardContent>
-    </Card>
+    </MinimalCard>
   )
 }
 
@@ -119,7 +121,9 @@ export function StatsCards() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {statsData.map((stat, index) => (
-        <StatsCard key={index} stat={stat} />
+        <FadeIn key={index} delay={index * 100}>
+          <StatsCard stat={stat} />
+        </FadeIn>
       ))}
     </div>
   )

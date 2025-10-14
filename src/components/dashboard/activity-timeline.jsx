@@ -14,6 +14,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { MinimalCard } from '@/components/ui/minimal-animations'
+import { FadeIn } from '@/components/ui/animations'
 
 // Dummy activity data
 const recentActivities = [
@@ -135,19 +137,19 @@ function ActivityItem({ activity }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-medium text-ocean-800 dark:text-ocean-200">
             {activity.title}
           </p>
           {getStatusBadge()}
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-ocean-600 dark:text-ocean-400 mt-1">
           {activity.description}
         </p>
         <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-ocean-500 dark:text-ocean-500">
             {activity.partner}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-ocean-500 dark:text-ocean-500">
             {activity.timestamp}
           </p>
         </div>
@@ -158,24 +160,28 @@ function ActivityItem({ activity }) {
 
 export function ActivityTimeline() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          Recent Activity
-          <Badge variant="secondary" className="ml-2">
-            Live
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-96">
-          <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <ActivityItem key={activity.id} activity={activity} />
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <FadeIn delay={500}>
+      <MinimalCard className="border-ocean-200 dark:border-ocean-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-ocean-800 dark:text-ocean-200">
+            Recent Activity
+            <Badge variant="secondary" className="ml-2 bg-ocean-100 text-ocean-800 dark:bg-ocean-900 dark:text-ocean-200">
+              Live
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {recentActivities.map((activity, index) => (
+                <FadeIn key={activity.id} delay={600 + index * 50}>
+                  <ActivityItem activity={activity} />
+                </FadeIn>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </MinimalCard>
+    </FadeIn>
   )
 }

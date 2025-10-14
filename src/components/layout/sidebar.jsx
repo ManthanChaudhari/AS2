@@ -46,14 +46,14 @@ function SidebarContent({ onItemClick }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-5 w-5 text-primary-foreground" />
+      <div className="flex h-16 items-center border-b border-ocean-200 dark:border-ocean-800 px-6 bg-ocean-50 dark:bg-ocean-950">
+        <Link href="/dashboard" className="flex items-center space-x-3 transition-colors-minimal">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ocean-600 ring-2 ring-ocean-200 dark:ring-ocean-800">
+            <Shield className="h-6 w-6 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold">AS2 Portal</span>
-            <span className="text-xs text-muted-foreground">Pharmacovigilance</span>
+            <span className="text-sm font-bold text-ocean-800 dark:text-ocean-200">AS2 Portal</span>
+            <span className="text-xs text-ocean-600 dark:text-ocean-400">Pharmacovigilance</span>
           </div>
         </Link>
       </div>
@@ -77,8 +77,8 @@ function SidebarContent({ onItemClick }) {
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-between px-3 py-2 text-left font-normal",
-                        hasActive && "bg-accent text-accent-foreground"
+                        "w-full justify-between px-3 py-2 text-left font-normal text-ocean-700 dark:text-ocean-300 hover:bg-ocean-100 dark:hover:bg-ocean-900 hover:text-ocean-800 dark:hover:text-ocean-200 transition-colors-minimal",
+                        hasActive && "bg-ocean-200 dark:bg-ocean-800 text-ocean-900 dark:text-ocean-100"
                       )}
                     >
                       <div className="flex items-center space-x-3">
@@ -100,8 +100,8 @@ function SidebarContent({ onItemClick }) {
                         size="sm"
                         asChild
                         className={cn(
-                          "w-full justify-start px-3 py-2 font-normal",
-                          isActive(subItem.href) && "bg-accent text-accent-foreground"
+                          "w-full justify-start px-3 py-2 font-normal text-ocean-600 dark:text-ocean-400 hover:bg-ocean-50 dark:hover:bg-ocean-900 hover:text-ocean-700 dark:hover:text-ocean-300 transition-colors-minimal",
+                          isActive(subItem.href) && "bg-ocean-100 dark:bg-ocean-800 text-ocean-800 dark:text-ocean-200"
                         )}
                         onClick={onItemClick}
                       >
@@ -124,8 +124,8 @@ function SidebarContent({ onItemClick }) {
                   variant="ghost"
                   asChild
                   className={cn(
-                    "w-full justify-start px-3 py-2 font-normal",
-                    isActive(item.href) && "bg-accent text-accent-foreground"
+                    "w-full justify-start px-3 py-2 font-normal text-ocean-700 dark:text-ocean-300 hover:bg-ocean-100 dark:hover:bg-ocean-900 hover:text-ocean-800 dark:hover:text-ocean-200 transition-colors-minimal",
+                    isActive(item.href) && "bg-ocean-200 dark:bg-ocean-800 text-ocean-900 dark:text-ocean-100"
                   )}
                   onClick={onItemClick}
                 >
@@ -143,9 +143,9 @@ function SidebarContent({ onItemClick }) {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t p-4">
-        <div className="text-xs text-muted-foreground">
-          <div>AS2 Portal v1.0.0</div>
+      <div className="border-t border-ocean-200 dark:border-ocean-800 p-4 bg-ocean-50 dark:bg-ocean-950">
+        <div className="text-xs text-ocean-600 dark:text-ocean-400">
+          <div className="font-medium">AS2 Portal v1.0.0</div>
           <div>© 2024 Your Company</div>
         </div>
       </div>
@@ -155,7 +155,7 @@ function SidebarContent({ onItemClick }) {
 
 export function Sidebar() {
   return (
-    <div className="hidden border-r bg-background lg:block lg:w-64">
+    <div className="hidden border-r border-ocean-200 dark:border-ocean-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm lg:block lg:w-64">
       <SidebarContent />
     </div>
   )

@@ -15,9 +15,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg border border-ocean-200 dark:border-ocean-800 p-6">
+        <h1 className="text-3xl font-bold tracking-tight text-ocean-800 dark:text-ocean-200">Dashboard</h1>
+        <p className="text-ocean-600 dark:text-ocean-400 mt-2">
           Welcome to your AS2 Pharmacovigilance Portal. Monitor your file transmissions and system health.
         </p>
       </div>

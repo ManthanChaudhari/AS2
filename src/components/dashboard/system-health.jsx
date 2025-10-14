@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { MinimalCard } from '@/components/ui/minimal-animations'
+import { FadeIn } from '@/components/ui/animations'
 
 // Dummy system health data
 const systemServices = [
@@ -98,19 +100,19 @@ function ServiceStatus({ service }) {
   }
 
   return (
-    <div className="flex items-start space-x-3 p-4 border rounded-lg">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-        <Icon className="h-5 w-5 text-muted-foreground" />
+    <div className="flex items-start space-x-3 p-4 border border-ocean-200 dark:border-ocean-700 rounded-lg bg-ocean-50/50 dark:bg-ocean-900/20 transition-colors-minimal">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ocean-100 dark:bg-ocean-800">
+        <Icon className="h-5 w-5 text-ocean-600 dark:text-ocean-400" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {getStatusIcon()}
-            <h3 className="font-medium">{service.name}</h3>
+            <h3 className="font-medium text-ocean-800 dark:text-ocean-200">{service.name}</h3>
           </div>
           {getStatusBadge()}
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-ocean-600 dark:text-ocean-400 mt-1">
           {service.description}
         </p>
         <div className="flex items-center justify-between mt-3">
@@ -143,23 +145,29 @@ export function SystemHealth() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>System Health</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
+    <FadeIn delay={600}>
+      <MinimalCard className="border-ocean-200 dark:border-ocean-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-ocean-800 dark:text-ocean-200">System Health</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="border-ocean-200 dark:border-ocean-700 text-ocean-700 dark:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 transition-colors-minimal"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Overall Health Summary */}
-        <div className="p-4 bg-muted/50 rounded-lg">
+        <div className="p-4 bg-ocean-50 dark:bg-ocean-900/30 rounded-lg border border-ocean-200 dark:border-ocean-700">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="font-medium">Overall System Status</span>
+              <span className="font-medium text-ocean-800 dark:text-ocean-200">Overall System Status</span>
             </div>
             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
               Operational
@@ -186,12 +194,15 @@ export function SystemHealth() {
 
         {/* Individual Services */}
         <div className="space-y-4">
-          <h4 className="font-medium text-sm text-muted-foreground">Service Status</h4>
+          <h4 className="font-medium text-sm text-ocean-700 dark:text-ocean-300">Service Status</h4>
           {systemServices.map((service, index) => (
-            <ServiceStatus key={index} service={service} />
+            <FadeIn key={index} delay={700 + index * 100}>
+              <ServiceStatus service={service} />
+            </FadeIn>
           ))}
         </div>
       </CardContent>
-    </Card>
+    </MinimalCard>
+    </FadeIn>
   )
 }

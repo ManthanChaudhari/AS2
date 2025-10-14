@@ -41,6 +41,36 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Ocean Blue Color Palette */
+  --color-ocean-50: oklch(0.98 0.01 220);
+  --color-ocean-100: oklch(0.94 0.03 220);
+  --color-ocean-200: oklch(0.86 0.06 220);
+  --color-ocean-300: oklch(0.76 0.12 220);
+  --color-ocean-400: oklch(0.65 0.18 220);
+  --color-ocean-500: oklch(0.54 0.24 220);
+  --color-ocean-600: oklch(0.43 0.20 220);
+  --color-ocean-700: oklch(0.35 0.16 220);
+  --color-ocean-800: oklch(0.28 0.12 220);
+  --color-ocean-900: oklch(0.22 0.08 220);
+  --color-ocean-950: oklch(0.15 0.04 220);
+  
+  /* Ocean Blue Semantic Colors */
+  --color-ocean-primary: var(--color-ocean-600);
+  --color-ocean-secondary: var(--color-ocean-400);
+  --color-ocean-light: var(--color-ocean-300);
+  --color-ocean-accent: var(--color-ocean-700);
+  
+  /* Animation Durations */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  
+  /* Easing Functions */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root {
@@ -51,31 +81,31 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.43 0.20 220); /* Ocean Blue 600 */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.65 0.18 220); /* Ocean Blue 400 */
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.43 0.20 220); /* Ocean Blue 600 */
   --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-2: oklch(0.54 0.24 220); /* Ocean Blue 500 */
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.43 0.20 220); /* Ocean Blue 600 */
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.94 0.03 220); /* Ocean Blue 100 */
+  --sidebar-accent-foreground: oklch(0.35 0.16 220); /* Ocean Blue 700 */
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.43 0.20 220); /* Ocean Blue 600 */
 }
 
 .dark {
@@ -85,31 +115,31 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.65 0.18 220); /* Ocean Blue 400 - lighter for dark mode */
+  --primary-foreground: oklch(0.15 0.04 220); /* Ocean Blue 950 */
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.76 0.12 220); /* Ocean Blue 300 */
+  --accent-foreground: oklch(0.22 0.08 220); /* Ocean Blue 900 */
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.65 0.18 220); /* Ocean Blue 400 */
   --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-2: oklch(0.54 0.24 220); /* Ocean Blue 500 */
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.18 220); /* Ocean Blue 400 */
+  --sidebar-primary-foreground: oklch(0.15 0.04 220); /* Ocean Blue 950 */
+  --sidebar-accent: oklch(0.28 0.12 220); /* Ocean Blue 800 */
+  --sidebar-accent-foreground: oklch(0.94 0.03 220); /* Ocean Blue 100 */
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.65 0.18 220); /* Ocean Blue 400 */
 }
 
 @layer base {
@@ -284,13 +314,54 @@
     @apply flex-1 min-w-0;
   }
   
-  /* Animation utilities */
+  /* Ocean Blue Gradients */
+  .ocean-gradient-primary {
+    background: linear-gradient(135deg, oklch(0.54 0.24 220) 0%, oklch(0.43 0.20 220) 100%);
+  }
+  
+  .ocean-gradient-light {
+    background: linear-gradient(135deg, oklch(0.98 0.01 220) 0%, oklch(0.94 0.03 220) 100%);
+  }
+  
+  .ocean-gradient-subtle {
+    background: linear-gradient(135deg, oklch(0.86 0.06 220) 0%, oklch(0.76 0.12 220) 100%);
+  }
+  
+  /* Minimal Animation Utilities */
+  .transition-minimal {
+    transition: all var(--duration-normal) var(--ease-out);
+  }
+  
+  .transition-colors-minimal {
+    transition: color var(--duration-normal) var(--ease-out),
+                background-color var(--duration-normal) var(--ease-out),
+                border-color var(--duration-normal) var(--ease-out);
+  }
+  
+  .transition-shadow-minimal {
+    transition: box-shadow var(--duration-normal) var(--ease-out);
+  }
+  
+  .hover-lift {
+    transition: transform var(--duration-normal) var(--ease-out),
+                box-shadow var(--duration-normal) var(--ease-out);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0.43 0.20 220 / 0.15);
+  }
+  
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
   
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn var(--duration-slow) var(--ease-out);
+  }
+  
+  .animate-slide-in {
+    animation: slideIn var(--duration-normal) var(--ease-out);
   }
   
   @keyframes fadeIn {
@@ -301,6 +372,36 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .transition-minimal,
+    .transition-colors-minimal,
+    .transition-shadow-minimal,
+    .hover-lift {
+      transition: none;
+    }
+    
+    .hover-lift:hover {
+      transform: none;
+    }
+    
+    .animate-fade-in,
+    .animate-slide-in {
+      animation: none;
     }
   }
   

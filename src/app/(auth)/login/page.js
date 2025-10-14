@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { Eye, EyeOff, Shield, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Shield, Loader2, Waves } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
+import { FadeIn, AnimatedButton } from "@/components/ui/animations";
+import { MinimalCard } from "@/components/ui/minimal-animations";
 
 // Validation schema
 const loginSchema = z.object({
@@ -123,207 +125,254 @@ export default function LoginPage() {
 
   if (showMFA) {
     return (
-      <Card className="w-full shadow-xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-            <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <CardTitle className="text-2xl">
-            Multi-Factor Authentication
-          </CardTitle>
-          <CardDescription>
-            Enter the 6-digit code from your authenticator app
-          </CardDescription>
+      <MinimalCard className="w-full shadow-xl backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border-ocean-200 dark:border-ocean-800">
+        <CardHeader className="text-center space-y-4">
+          <FadeIn delay={100}>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-ocean-100 dark:bg-ocean-900 ring-4 ring-ocean-200 dark:ring-ocean-800">
+              <Shield className="h-8 w-8 text-ocean-600 dark:text-ocean-400" />
+            </div>
+          </FadeIn>
+          <FadeIn delay={200}>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-ocean-700 to-ocean-500 bg-clip-text text-transparent">
+              Multi-Factor Authentication
+            </CardTitle>
+            <CardDescription className="text-ocean-600 dark:text-ocean-300">
+              Enter the 6-digit code from your authenticator app
+            </CardDescription>
+          </FadeIn>
         </CardHeader>
 
         <form onSubmit={mfaForm.handleSubmit(onMFASubmit)}>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="mfaCode">Authentication Code</Label>
-              <Input
-                id="mfaCode"
-                type="text"
-                placeholder="000000"
-                maxLength={6}
-                className="text-center text-lg tracking-widest"
-                {...mfaForm.register("mfaCode")}
-                disabled={isLoading}
-              />
-              {mfaForm.formState.errors.mfaCode && (
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {mfaForm.formState.errors.mfaCode.message}
-                </p>
+          <CardContent className="space-y-6">
+            <FadeIn delay={300}>
+              {error && (
+                <Alert variant="destructive" className="animate-slide-in">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
-            </div>
+            </FadeIn>
+
+            <FadeIn delay={400}>
+              <div className="space-y-2">
+                <Label htmlFor="mfaCode" className="text-ocean-700 dark:text-ocean-300 font-medium">
+                  Authentication Code
+                </Label>
+                <Input
+                  id="mfaCode"
+                  type="text"
+                  placeholder="000000"
+                  maxLength={6}
+                  className="text-center text-lg tracking-widest transition-colors-minimal focus:border-ocean-500 focus:ring-ocean-500 border-ocean-200 dark:border-ocean-700"
+                  {...mfaForm.register("mfaCode")}
+                  disabled={isLoading}
+                />
+                {mfaForm.formState.errors.mfaCode && (
+                  <p className="text-sm text-red-600 dark:text-red-400 animate-slide-in">
+                    {mfaForm.formState.errors.mfaCode.message}
+                  </p>
+                )}
+              </div>
+            </FadeIn>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verify Code
-            </Button>
+            <FadeIn delay={500}>
+              <AnimatedButton 
+                type="submit" 
+                className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-medium py-3 transition-colors-minimal" 
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Verify Code
+              </AnimatedButton>
+            </FadeIn>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setShowMFA(false)}
-              disabled={isLoading}
-            >
-              Back to Login
-            </Button>
+            <FadeIn delay={600}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-ocean-600 hover:text-ocean-700 hover:bg-ocean-50 dark:text-ocean-400 dark:hover:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+                onClick={() => setShowMFA(false)}
+                disabled={isLoading}
+              >
+                Back to Login
+              </Button>
+            </FadeIn>
           </CardFooter>
         </form>
-      </Card>
+      </MinimalCard>
     );
   }
 
   return (
-    <Card className="w-full shadow-xl">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-          <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-        </div>
-        <CardTitle className="text-2xl">AS2 Pharmacovigilance Portal</CardTitle>
-        <CardDescription>
-          Sign in to your account to manage secure file transmissions
-        </CardDescription>
+    <MinimalCard className="w-full shadow-xl backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border-ocean-200 dark:border-ocean-800">
+      <CardHeader className="text-center space-y-4">
+        <FadeIn delay={100}>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-ocean-100 dark:bg-ocean-900 ring-4 ring-ocean-200 dark:ring-ocean-800">
+            <Waves className="h-8 w-8 text-ocean-600 dark:text-ocean-400" />
+          </div>
+        </FadeIn>
+        <FadeIn delay={200}>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-ocean-700 to-ocean-500 bg-clip-text text-transparent">
+            AS2 Pharmacovigilance Portal
+          </CardTitle>
+          <CardDescription className="text-ocean-600 dark:text-ocean-300 mt-2">
+            Sign in to your account to manage secure file transmissions
+          </CardDescription>
+        </FadeIn>
       </CardHeader>
 
       <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {loginAttempts > 0 && loginAttempts < 5 && (
-            <Alert>
-              <AlertDescription>
-                Warning: {loginAttempts} failed login attempt
-                {loginAttempts > 1 ? "s" : ""}. Account will be locked after 5
-                attempts.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="user@company.com"
-              {...loginForm.register("email")}
-              disabled={isLoading}
-            />
-            {loginForm.formState.errors.email && (
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {loginForm.formState.errors.email.message}
-              </p>
+        <CardContent className="space-y-6">
+          <FadeIn delay={300}>
+            {error && (
+              <Alert variant="destructive" className="animate-slide-in">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                {...loginForm.register("password")}
-                disabled={isLoading}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            {loginForm.formState.errors.password && (
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {loginForm.formState.errors.password.message}
-              </p>
+            {loginAttempts > 0 && loginAttempts < 5 && (
+              <Alert className="border-ocean-200 bg-ocean-50 text-ocean-800 dark:border-ocean-800 dark:bg-ocean-950 dark:text-ocean-200 animate-slide-in">
+                <AlertDescription>
+                  Warning: {loginAttempts} failed login attempt
+                  {loginAttempts > 1 ? "s" : ""}. Account will be locked after 5
+                  attempts.
+                </AlertDescription>
+              </Alert>
             )}
-          </div>
+          </FadeIn>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="rememberMe"
-                {...loginForm.register("rememberMe")}
-                disabled={isLoading}
-              />
-              <Label htmlFor="rememberMe" className="text-sm">
-                Remember me
+          <FadeIn delay={400}>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-ocean-700 dark:text-ocean-300 font-medium">
+                Email Address
               </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@company.com"
+                {...loginForm.register("email")}
+                disabled={isLoading}
+                className="transition-colors-minimal focus:border-ocean-500 focus:ring-ocean-500 border-ocean-200 dark:border-ocean-700"
+              />
+              {loginForm.formState.errors.email && (
+                <p className="text-sm text-red-600 dark:text-red-400 animate-slide-in">
+                  {loginForm.formState.errors.email.message}
+                </p>
+              )}
             </div>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          </FadeIn>
+
+          <FadeIn delay={500}>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-ocean-700 dark:text-ocean-300 font-medium">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  {...loginForm.register("password")}
+                  disabled={isLoading}
+                  className="transition-colors-minimal focus:border-ocean-500 focus:ring-ocean-500 border-ocean-200 dark:border-ocean-700 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-ocean-50 dark:hover:bg-ocean-900 text-ocean-600 dark:text-ocean-400 transition-colors-minimal"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {loginForm.formState.errors.password && (
+                <p className="text-sm text-red-600 dark:text-red-400 animate-slide-in">
+                  {loginForm.formState.errors.password.message}
+                </p>
+              )}
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={600}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rememberMe"
+                  {...loginForm.register("rememberMe")}
+                  disabled={isLoading}
+                  className="border-ocean-300 data-[state=checked]:bg-ocean-600 data-[state=checked]:border-ocean-600"
+                />
+                <Label htmlFor="rememberMe" className="text-sm text-ocean-700 dark:text-ocean-300">
+                  Remember me
+                </Label>
+              </div>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-ocean-600 hover:text-ocean-500 dark:text-ocean-400 dark:hover:text-ocean-300 transition-colors-minimal font-medium"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          </FadeIn>
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || loginAttempts >= 5}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleSSO}
-            disabled={isLoading}
-          >
-            Enterprise SSO
-          </Button>
-
-          <div className="text-center text-sm text-muted-foreground">
-            New organization?{" "}
-            <Link
-              href="/register"
-              className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+          <FadeIn delay={700}>
+            <AnimatedButton
+              type="submit"
+              className="w-full bg-ocean-600 hover:bg-ocean-700 text-white font-medium py-3 transition-colors-minimal"
+              disabled={isLoading || loginAttempts >= 5}
             >
-              Register here
-            </Link>
-          </div>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </AnimatedButton>
+          </FadeIn>
+
+          <FadeIn delay={800}>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full border-ocean-200 dark:border-ocean-700" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-900 px-3 text-ocean-600 dark:text-ocean-400 font-medium">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={900}>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-ocean-200 text-ocean-700 hover:bg-ocean-50 dark:border-ocean-700 dark:text-ocean-300 dark:hover:bg-ocean-900 transition-colors-minimal"
+              onClick={handleSSO}
+              disabled={isLoading}
+            >
+              Enterprise SSO
+            </Button>
+          </FadeIn>
+
+          <FadeIn delay={1000}>
+            <div className="text-center text-sm text-ocean-600 dark:text-ocean-400">
+              New organization?{" "}
+              <Link
+                href="/register"
+                className="text-ocean-700 hover:text-ocean-600 dark:text-ocean-300 dark:hover:text-ocean-200 font-medium transition-colors-minimal"
+              >
+                Register here
+              </Link>
+            </div>
+          </FadeIn>
         </CardFooter>
       </form>
-    </Card>
+    </MinimalCard>
   );
 }

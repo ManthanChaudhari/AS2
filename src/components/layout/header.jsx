@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/lib/theme-context'
 import { 
   Bell, 
   Search, 
@@ -98,12 +98,12 @@ function Breadcrumbs() {
   const breadcrumbs = getBreadcrumbs()
 
   return (
-    <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+    <nav className="flex items-center space-x-1 text-sm text-ocean-600 dark:text-ocean-400">
       <Home className="h-4 w-4" />
       {breadcrumbs.map((crumb, index) => (
         <div key={crumb.href} className="flex items-center space-x-1">
           {index > 0 && <ChevronRight className="h-4 w-4" />}
-          <span className={crumb.isLast ? 'text-foreground font-medium' : 'hover:text-foreground'}>
+          <span className={crumb.isLast ? 'text-ocean-800 dark:text-ocean-200 font-medium' : 'hover:text-ocean-700 dark:hover:text-ocean-300 transition-colors-minimal'}>
             {crumb.label}
           </span>
         </div>
@@ -119,12 +119,12 @@ function NotificationDropdown() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative text-ocean-600 dark:text-ocean-400 hover:text-ocean-700 dark:hover:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 transition-colors-minimal">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs bg-red-500 hover:bg-red-600"
             >
               {unreadCount}
             </Badge>
@@ -182,10 +182,10 @@ function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-ocean-50 dark:hover:bg-ocean-900 transition-colors-minimal">
+          <Avatar className="h-10 w-10 ring-2 ring-ocean-200 dark:ring-ocean-700">
             <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback>{userData.initials}</AvatarFallback>
+            <AvatarFallback className="bg-ocean-600 text-white font-medium">{userData.initials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -221,13 +221,14 @@ function UserDropdown() {
 }
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+      onClick={toggleTheme}
+      className="text-ocean-600 dark:text-ocean-400 hover:text-ocean-700 dark:hover:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-ocean-900 transition-colors-minimal"
     >
       <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -246,7 +247,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b border-ocean-200 dark:border-ocean-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Left side - Mobile menu + Breadcrumbs */}
         <div className="flex items-center space-x-4">
@@ -259,11 +260,11 @@ export function Header() {
         {/* Center - Search */}
         <div className="flex-1 max-w-md mx-4">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ocean-500 dark:text-ocean-400" />
             <Input
               type="search"
               placeholder="Search partners, certificates, messages..."
-              className="pl-10 pr-4"
+              className="pl-10 pr-4 border-ocean-200 dark:border-ocean-700 focus:border-ocean-500 focus:ring-ocean-500 transition-colors-minimal"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

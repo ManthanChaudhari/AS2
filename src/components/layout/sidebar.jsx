@@ -1,41 +1,45 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ChevronDown, ChevronRight, Menu, Shield } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ChevronDown, ChevronRight, Menu, Shield } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { navigationItems } from "@/lib/constants"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { navigationItems } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 function SidebarContent({ onItemClick }) {
-  const pathname = usePathname()
-  const [openItems, setOpenItems] = useState(new Set())
+  const pathname = usePathname();
+  const [openItems, setOpenItems] = useState(new Set());
 
   const toggleItem = (title) => {
-    const newOpenItems = new Set(openItems)
+    const newOpenItems = new Set(openItems);
     if (newOpenItems.has(title)) {
-      newOpenItems.delete(title)
+      newOpenItems.delete(title);
     } else {
-      newOpenItems.add(title)
+      newOpenItems.add(title);
     }
-    setOpenItems(newOpenItems)
-  }
+    setOpenItems(newOpenItems);
+  };
 
   const isActive = (href) => {
     if (href === "/dashboard") {
-      return pathname === "/dashboard"
+      return pathname === "/dashboard";
     }
-    return pathname.startsWith(href)
-  }
+    return pathname.startsWith(href);
+  };
 
   const hasActiveChild = (items) => {
-    return items?.some((item) => isActive(item.href))
-  }
+    return items?.some((item) => isActive(item.href));
+  };
 
   return (
     <div className="flex h-[100vh] flex-col sticky top-0">
@@ -47,7 +51,9 @@ function SidebarContent({ onItemClick }) {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">AS2 Portal</span>
-            <span className="text-xs text-muted-foreground">Pharmacovigilance</span>
+            <span className="text-xs text-muted-foreground">
+              Pharmacovigilance
+            </span>
           </div>
         </Link>
       </div>
@@ -58,41 +64,57 @@ function SidebarContent({ onItemClick }) {
           {navigationItems.map((item) => {
             if (item.items) {
               // Collapsible menu item
-              const isOpen = openItems.has(item.title)
-              const hasActive = hasActiveChild(item.items)
+              const isOpen = openItems.has(item.title);
+              const hasActive = hasActiveChild(item.items);
 
               return (
-                <Collapsible key={item.title} open={isOpen} onOpenChange={() => toggleItem(item.title)}>
+                <Collapsible
+                  key={item.title}
+                  open={isOpen}
+                  onOpenChange={() => toggleItem(item.title)}
+                >
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
                       className={cn(
                         "group relative w-full justify-between px-3 py-5 text-left font-medium rounded-xl",
                         isOpen || hasActive
-                          ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                          : "text-muted-foreground hover:bg-muted/50",
+                          ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                          : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                       )}
                     >
                       <div className="flex items-center gap-3">
                         <span
                           className={cn(
                             "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
-                            isOpen || hasActive ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary",
+                            isOpen || hasActive
+                              ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md"
+                              : "bg-blue-50 group-hover:bg-blue-100 group-hover:scale-110 text-blue-600"
                           )}
                         >
                           <item.icon className="h-4 w-4" />
                         </span>
-                        <span className={cn("text-sm", isOpen || hasActive ? "text-primary" : "text-foreground")}>
+                        <span className="font-medium truncate">
                           {item.title}
                         </span>
                       </div>
                       {isOpen ? (
                         <ChevronDown
-                          className={cn("h-4 w-4", isOpen || hasActive ? "text-primary" : "text-muted-foreground")}
+                          className={cn(
+                            "h-4 w-4",
+                            isOpen || hasActive
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          )}
                         />
                       ) : (
                         <ChevronRight
-                          className={cn("h-4 w-4", isOpen || hasActive ? "text-primary" : "text-muted-foreground")}
+                          className={cn(
+                            "h-4 w-4",
+                            isOpen || hasActive
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          )}
                         />
                       )}
                     </Button>
@@ -105,10 +127,10 @@ function SidebarContent({ onItemClick }) {
                         size="sm"
                         asChild
                         className={cn(
-                          "group relative w-full justify-start px-3 py-5 font-medium rounded-xl",
+                          "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium rounded-xl text-sm transition-all duration-200 hover:scale-[1.02]",
                           isActive(subItem.href)
-                            ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                            : "text-muted-foreground hover:bg-muted/50",
+                            ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                            : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                         )}
                         onClick={onItemClick}
                       >
@@ -119,25 +141,26 @@ function SidebarContent({ onItemClick }) {
                                 className={cn(
                                   "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
                                   isActive(subItem.href)
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-primary/10 text-primary",
+                                    ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md"
+                                    : "bg-blue-50 group-hover:bg-blue-100 group-hover:scale-110 text-blue-600"
                                 )}
                               >
                                 <subItem.icon className="h-4 w-4" />
                               </span>
                             )}
-                            <span
-                              className={cn("text-sm", isActive(subItem.href) ? "text-primary" : "text-foreground")}
-                            >
+                            <span className="font-medium truncate">
                               {subItem.title}
                             </span>
+                            {isActive(subItem.href) && (
+                              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
+                            )}
                           </div>
                         </Link>
                       </Button>
                     ))}
                   </CollapsibleContent>
                 </Collapsible>
-              )
+              );
             } else {
               // Simple menu item
               return (
@@ -146,10 +169,10 @@ function SidebarContent({ onItemClick }) {
                   variant="ghost"
                   asChild
                   className={cn(
-                    "group relative w-full justify-start px-3 py-2 font-medium rounded-xl",
+                    "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium rounded-xl text-sm transition-all duration-200 hover:scale-[1.02]",
                     isActive(item.href)
-                      ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                      : "text-muted-foreground hover:bg-muted/50",
+                      ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                      : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                   )}
                   onClick={onItemClick}
                 >
@@ -157,22 +180,22 @@ function SidebarContent({ onItemClick }) {
                     <div className="flex items-center gap-3">
                       <span
                         className={cn(
-                          "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
-                          isActive(item.href) ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary",
+                          "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                          isActive(item.href)
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md"
+                            : "bg-blue-50 group-hover:bg-blue-100 group-hover:scale-110 text-blue-600"
                         )}
                       >
                         <item.icon className="h-4 w-4" />
                       </span>
-                      <span className={cn("text-sm", isActive(item.href) ? "text-primary" : "text-foreground")}>
-                        {item.title}
-                      </span>
+                      <span className="font-medium truncate">{item.title}</span>
                     </div>
                     {isActive(item.href) && (
-                      <span aria-hidden className="absolute right-1 top-1 bottom-1 w-1 rounded-full bg-primary" />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-blue-600 to-blue-700 rounded-full"></div>
                     )}
                   </Link>
                 </Button>
-              )
+              );
             }
           })}
         </nav>
@@ -186,19 +209,19 @@ function SidebarContent({ onItemClick }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function Sidebar() {
   return (
     <div className="hidden border-r bg-background lg:block lg:w-64">
-      <SidebarContent />
+      <SidebarContent className=" py-4" />
     </div>
-  )
+  );
 }
 
 export function MobileSidebar() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -212,5 +235,5 @@ export function MobileSidebar() {
         <SidebarContent onItemClick={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
-  )
+  );
 }

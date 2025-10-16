@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 import ApiService from '@/lib/ApiServiceFunctions';
 import ErrorHandler from '@/lib/errorHandler';
 import {
@@ -23,7 +24,8 @@ const useAuth = () => {
     (state) => state.auth
   );
 
-  const [refreshInterval, setRefreshInterval] = useState(null);
+  const refreshIntervalRef = useRef(null);
+  const refreshInterval = 10000;
 
   // Check if user is authenticated
   const isAuthenticated = Boolean(user && accessToken);
@@ -45,10 +47,22 @@ const useAuth = () => {
     ApiService.setToken(access_token);
     ApiService.setRefreshToken(refresh_token);
 
-    // Store tokens in localStorage
+    // Store tokens in localStorage and cookies
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
+      
+      // Store in cookies for middleware access (secure, httpOnly in production)
+      Cookies.set('token', access_token, { 
+        expires: 1, // 1 day
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      Cookies.set('refresh_token', refresh_token, { 
+        expires: 7, // 7 days
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
     }
 
     // Update Redux state
@@ -70,9 +84,9 @@ const useAuth = () => {
     ApiService.clearTokens();
 
     // Clear refresh interval
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-      setRefreshInterval(null);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
     }
 
     // Update Redux state
@@ -138,7 +152,7 @@ const useAuth = () => {
     }));
 
     return result;
-  }, [dispatch, accessToken, refreshToken, logout]);
+  }, [dispatch, accessToken, refreshToken]); // Remove logout from dependencies to prevent circular dependency
 
   // Refresh token method
   const refreshTokens = useCallback(async () => {
@@ -181,8 +195,8 @@ const useAuth = () => {
 
   // Start automatic refresh
   const startAutoRefresh = useCallback(() => {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
     }
 
     const interval = setInterval(async () => {
@@ -194,16 +208,16 @@ const useAuth = () => {
       }
     }, 10 * 60 * 1000); // 10 minutes
 
-    setRefreshInterval(interval);
-  }, [refreshTokens, refreshInterval]);
+    refreshIntervalRef.current = interval;
+  }, [refreshTokens]);
 
   // Stop automatic refresh
   const stopAutoRefresh = useCallback(() => {
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-      setRefreshInterval(null);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
     }
-  }, [refreshInterval]);
+  }, []);
 
   // Update user profile
   const updateUserProfile = useCallback((userData) => {
@@ -293,7 +307,7 @@ const useAuth = () => {
       ApiService.setRefreshToken(storedRefreshToken);
 
       // Try to get current user to validate token
-      const result = await getCurrentUser();
+      const result = await ApiService.getCurrentUser();
 
       if (result.error) {
         // Token is invalid, clear everything
@@ -309,18 +323,23 @@ const useAuth = () => {
         }));
       }
     }
-  }, [dispatch, getCurrentUser]);
+  }, [dispatch]); // Remove getCurrentUser dependency and call ApiService directly
 
   // Initialize session restoration on mount
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
       restoreSession();
     }
-  }, [restoreSession, isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading]); // Remove restoreSession from dependencies
 
   // Automatic token refresh mechanism
   useEffect(() => {
     if (isAuthenticated && refreshToken) {
+      // Clear any existing interval first
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+
       // Set up automatic refresh every 10 minutes (600,000 ms)
       const interval = setInterval(async () => {
         console.log('Auto-refreshing token...');
@@ -343,7 +362,7 @@ const useAuth = () => {
         }
       }, 10 * 60 * 1000); // 10 minutes
 
-      setRefreshInterval(interval);
+      refreshIntervalRef.current = interval;
 
       // Cleanup function
       return () => {
@@ -353,21 +372,21 @@ const useAuth = () => {
       };
     } else {
       // Clear interval if user is not authenticated
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-        setRefreshInterval(null);
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
       }
     }
-  }, [isAuthenticated, refreshToken, refreshTokens, refreshInterval]);
+  }, [isAuthenticated, refreshToken]); // Remove refreshTokens from dependencies
 
   // Cleanup interval on unmount
   useEffect(() => {
     return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [refreshInterval]);
+  }, []);
 
   return {
     // State
@@ -395,8 +414,7 @@ const useAuth = () => {
     validateSession,
     checkSessionExpiration,
 
-    // Internal state for refresh interval management
-    setRefreshInterval
+
   };
 };
 

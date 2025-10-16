@@ -1,5 +1,5 @@
 // Base URL configuration
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const BASE_URL = "https://d3o0xna6ndudcs.cloudfront.net";
 
 const ApiEndPoints = {
   // Base URL

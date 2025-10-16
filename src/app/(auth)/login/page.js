@@ -43,11 +43,17 @@ export default function LoginPage() {
   const [showMFA, setShowMFA] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const router = useRouter();
-  
+
   // Use the authentication hook
-  const { login, isLoading, error: authError, clearError, isAuthenticated } = useAuth();
+  const {
+    login,
+    isLoading,
+    error: authError,
+    clearError,
+    isAuthenticated,
+  } = useAuth();
   const [localError, setLocalError] = useState("");
-  
+
   // Combined error from auth hook and local state
   const error = authError || localError;
 
@@ -71,8 +77,9 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
+    console.log({isAuthenticated})
     if (isAuthenticated) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [isAuthenticated, router]);
 
@@ -89,13 +96,13 @@ export default function LoginPage() {
     try {
       const result = await login({
         email: data.email,
-        password: data.password
+        password: data.password,
       });
 
       if (result.error) {
         setLoginAttempts((prev) => prev + 1);
         setLocalError(ErrorHandler.getUserMessage(result));
-        
+
         // Account lockout simulation
         if (loginAttempts >= 4) {
           setLocalError(
@@ -104,10 +111,10 @@ export default function LoginPage() {
         }
       } else {
         // Success - redirect will happen automatically via useEffect
-        console.log('Login successful');
+        console.log("Login successful");
       }
     } catch (err) {
-      setLocalError(err.message || 'Login failed. Please try again.');
+      setLocalError(err.message || "Login failed. Please try again.");
     }
   };
 
@@ -118,9 +125,16 @@ export default function LoginPage() {
       // Simulate MFA verification
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Success - redirect to dashboard
+      // Success - redirect to original destination or dashboard
       console.log("MFA verification successful");
-      router.push("/dashboard");
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get("redirect");
+
+      if (redirectTo) {
+        router.push(redirectTo);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setLocalError(err.message || "MFA verification failed");
     }

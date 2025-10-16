@@ -139,8 +139,8 @@ export default function RegisterPage() {
   const steps = [
     { number: 1, title: "Company Details", icon: Building2, form: step1Form },
     { number: 2, title: "Admin User", icon: User, form: step2Form },
-    { number: 3, title: "Email Verification", icon: Mail, form: step3Form },
-    { number: 4, title: "Terms & Signature", icon: FileCheck, form: step4Form },
+    // { number: 3, title: "Email Verification", icon: Mail, form: step3Form },
+    // { number: 4, title: "Terms & Signature", icon: FileCheck, form: step4Form },
   ];
 
   const currentForm = steps[currentStep - 1].form;
@@ -193,6 +193,7 @@ export default function RegisterPage() {
         // Registration successful, show verification step
         setVerificationSent(true);
         console.log("Registration successful, verification email sent");
+        router.push("/login")
       }
 
       if (currentStep === 4) {

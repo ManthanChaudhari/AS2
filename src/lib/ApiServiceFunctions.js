@@ -404,6 +404,31 @@ const ApiService = {
       !ApiService.isTokenExpired(token)
     );
   },
+
+  // Partner Management API methods
+  getPartners: async (params = {}) => {
+    return ApiService.get(ApiEndPoints.PARTNERS.LIST, { params });
+  },
+
+  getPartner: async (partnerId) => {
+    return ApiService.get(ApiEndPoints.PARTNERS.GET(partnerId));
+  },
+
+  createPartner: async (formData) => {
+    return ApiService.post(ApiEndPoints.PARTNERS.CREATE, formData, {
+      'Content-Type': 'multipart/form-data',
+    });
+  },
+
+  updatePartner: async (partnerId, formData) => {
+    return ApiService.put(ApiEndPoints.PARTNERS.UPDATE(partnerId), formData, {
+      'Content-Type': 'multipart/form-data',
+    });
+  },
+
+  deletePartner: async (partnerId) => {
+    return ApiService.delete(ApiEndPoints.PARTNERS.DELETE(partnerId));
+  },
 };
 
 export default ApiService;

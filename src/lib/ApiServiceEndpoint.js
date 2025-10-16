@@ -14,6 +14,15 @@ const ApiEndPoints = {
     USER_ME: `${BASE_URL}/api/auth/me`
   },
   
+  // Partner Management endpoints - matching OpenAPI specification
+  PARTNERS: {
+    LIST: `${BASE_URL}/api/partners/`,
+    CREATE: `${BASE_URL}/api/partners/`,
+    GET: (id) => `${BASE_URL}/api/partners/${id}`,
+    UPDATE: (id) => `${BASE_URL}/api/partners/${id}`,
+    DELETE: (id) => `${BASE_URL}/api/partners/${id}`
+  },
+  
   // Legacy endpoint for backward compatibility
   refreshToken: `${BASE_URL}/api/auth/refresh`
 }

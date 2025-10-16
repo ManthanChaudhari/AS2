@@ -1,24 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
   Edit, 
-  TestTube, 
   Trash2,
   Building2,
   Settings,
   Shield,
   MessageSquare,
   Activity,
-  CheckCircle,
-  XCircle,
-  Clock,
   Download,
   Upload,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -29,121 +26,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import ApiService from '@/lib/ApiServiceFunctions'
+import { transformPartnerResponse, getCertificateStatus } from '@/lib/partnerDataTransform'
 
-// Dummy partner data
-const partnerData = {
-  id: 1,
-  name: 'FDA FAERS',
-  as2Id: 'FDA-FAERS-001',
-  organizationType: 'regulatory',
-  status: 'active',
-  contactName: 'John Smith',
-  contactEmail: 'john.smith@fda.gov',
-  contactPhone: '+1 (555) 123-4567',
-  notes: 'Primary regulatory partner for US ICSR submissions',
-  as2StationId: 'ACME-PHARMA-001',
-  partnerUrl: 'https://fda.gov:8443/as2',
-  subjectTemplate: 'ICSR Submission - {filename} - {date}',
-  encryptionAlgorithm: 'AES-256',
-  signingAlgorithm: 'SHA-256',
-  compression: true,
-  requestSignedMdn: true,
-  mdnDeliveryMethod: 'Synchronous',
-  mdnTimeout: 15,
-  mdnSigningAlgorithm: 'SHA-256',
-  enableRetry: true,
-  maxRetries: 3,
-  retryInterval: 5,
-  createdAt: '2024-01-15T10:30:00Z',
-  lastModified: '2024-10-01T14:20:00Z',
-  lastTest: '2024-10-10T09:15:00Z',
-  lastTestStatus: 'success'
+// Organization type labels
+const organizationTypeLabels = {
+  regulatory: 'Regulatory Agency',
+  mah: 'MAH',
+  cro: 'CRO',
+  other: 'Other'
 }
 
-// Dummy certificates data
-const certificatesData = [
-  {
-    id: 1,
-    type: 'Encryption',
-    subjectDn: 'CN=FDA FAERS, O=U.S. Food and Drug Administration, C=US',
-    issuerDn: 'CN=DigiCert SHA2 High Assurance Server CA, O=DigiCert Inc, C=US',
-    validFrom: '2024-01-01T00:00:00Z',
-    validTo: '2024-12-31T23:59:59Z',
-    keySize: '2048-bit RSA',
-    serialNumber: '0A1B2C3D4E5F6789',
-    fingerprint: 'SHA256:1A2B3C4D5E6F7890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890',
-    status: 'valid',
-    uploadedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    type: 'Signing',
-    subjectDn: 'CN=FDA FAERS, O=U.S. Food and Drug Administration, C=US',
-    issuerDn: 'CN=DigiCert SHA2 High Assurance Server CA, O=DigiCert Inc, C=US',
-    validFrom: '2024-01-01T00:00:00Z',
-    validTo: '2024-12-31T23:59:59Z',
-    keySize: '2048-bit RSA',
-    serialNumber: '0A1B2C3D4E5F6789',
-    fingerprint: 'SHA256:1A2B3C4D5E6F7890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890',
-    status: 'valid',
-    uploadedAt: '2024-01-15T10:30:00Z'
-  }
-]
-
-// Dummy message history
-const messageHistory = [
-  {
-    id: 'MSG-20241013-101530-001',
-    direction: 'outbound',
-    filename: 'case_report_20241013_001.xml',
-    status: 'success',
-    sentAt: '2024-10-13T10:15:30Z',
-    mdnReceived: true,
-    businessAck: 'accepted'
-  },
-  {
-    id: 'MSG-20241012-143020-002',
-    direction: 'outbound',
-    filename: 'case_report_20241012_002.xml',
-    status: 'success',
-    sentAt: '2024-10-12T14:30:20Z',
-    mdnReceived: true,
-    businessAck: 'accepted'
-  },
-  {
-    id: 'MSG-20241011-091545-003',
-    direction: 'inbound',
-    filename: 'acknowledgment_20241011.xml',
-    status: 'success',
-    receivedAt: '2024-10-11T09:15:45Z',
-    validated: true
-  }
-]
-
-// Dummy activity log
-const activityLog = [
-  {
-    id: 1,
-    action: 'Connection test successful',
-    user: 'John Doe',
-    timestamp: '2024-10-10T09:15:00Z',
-    details: 'Test file sent and MDN received successfully'
-  },
-  {
-    id: 2,
-    action: 'Configuration updated',
-    user: 'Jane Smith',
-    timestamp: '2024-10-01T14:20:00Z',
-    details: 'Updated MDN timeout from 10 to 15 minutes'
-  },
-  {
-    id: 3,
-    action: 'Certificate rotated',
-    user: 'John Doe',
-    timestamp: '2024-09-15T11:30:00Z',
-    details: 'Replaced expiring encryption certificate'
-  }
-]
 
 function getStatusBadge(status) {
   switch (status) {
@@ -158,69 +51,262 @@ function getStatusBadge(status) {
   }
 }
 
-function getCertificateStatus(validTo) {
-  const expiry = new Date(validTo)
-  const now = new Date()
-  const daysUntilExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))
-  
-  if (daysUntilExpiry < 0) {
-    return { status: 'expired', color: 'text-red-600', text: 'Expired' }
-  } else if (daysUntilExpiry <= 30) {
-    return { status: 'expiring', color: 'text-yellow-600', text: `Expires in ${daysUntilExpiry} days` }
-  } else {
-    return { status: 'valid', color: 'text-green-600', text: `Valid for ${daysUntilExpiry} days` }
-  }
-}
-
-function getMessageStatusIcon(status) {
-  switch (status) {
-    case 'success':
-      return <CheckCircle className="h-4 w-4 text-green-600" />
-    case 'failed':
-      return <XCircle className="h-4 w-4 text-red-600" />
-    case 'pending':
-      return <Clock className="h-4 w-4 text-yellow-600" />
-    default:
-      return <Clock className="h-4 w-4 text-gray-600" />
-  }
-}
-
 export default function PartnerDetailsPage() {
   const params = useParams()
+  const router = useRouter()
+  const [partner, setPartner] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showCertReplaceDialog, setShowCertReplaceDialog] = useState(false)
+  const [replaceCertType, setReplaceCertType] = useState(null)
+  const [newCertFile, setNewCertFile] = useState(null)
+  const [uploadingCert, setUploadingCert] = useState(false)
+  const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editData, setEditData] = useState(partnerData)
+  const [editData, setEditData] = useState({})
+
+  // Fetch partner data on component mount
+  useEffect(() => {
+    const fetchPartner = async () => {
+      if (!params.id) return
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await ApiService.getPartner(params.id)
+
+        if (response.error) {
+          if (response.error.status === 404) {
+            setError('Partner not found')
+          } else {
+            setError(response.error.message || 'Failed to load partner')
+          }
+        } else {
+          const transformedPartner = transformPartnerResponse(response.data)
+          setPartner(transformedPartner)
+          setEditData(transformedPartner)
+        }
+      } catch (err) {
+        setError('Failed to load partner. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPartner()
+  }, [params.id])
 
   const handleEdit = () => {
     setIsEditing(true)
   }
 
-  const handleSave = () => {
-    console.log('Saving partner data:', editData)
-    setIsEditing(false)
-    // In real app: save to API
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+
+    try {
+      // Transform edit data to API format
+      const { transformPartnerToEditForm, transformUpdatePartnerData } = await import('@/lib/partnerDataTransform')
+      const apiFormData = transformUpdatePartnerData(transformPartnerToEditForm(editData))
+
+      const response = await ApiService.updatePartner(partner.id, apiFormData)
+
+      if (response.error) {
+        setError(response.error.message || 'Failed to update partner')
+        return
+      }
+
+      // Update local state with new data
+      const { transformPartnerResponse } = await import('@/lib/partnerDataTransform')
+      const updatedPartner = transformPartnerResponse(response.data)
+      setPartner(updatedPartner)
+      setEditData(updatedPartner)
+      setIsEditing(false)
+
+      // Show success message (you could add a toast here)
+      console.log('Partner updated successfully')
+
+    } catch (err) {
+      setError(err.message || 'Failed to update partner. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancel = () => {
-    setEditData(partnerData)
+    setEditData(partner)
     setIsEditing(false)
   }
 
-  const handleTest = () => {
-    console.log('Testing connection to partner:', params.id)
-    // In real app: trigger connection test
-  }
-
   const handleDelete = () => {
-    console.log('Deleting partner:', params.id)
-    // In real app: show confirmation dialog and delete
+    setShowDeleteDialog(true)
   }
 
-  const handleCertificateDownload = (certId) => {
-    console.log('Downloading certificate:', certId)
+  const confirmDelete = async () => {
+    setDeleting(true)
+    setError(null)
+
+    try {
+      console.log({id : partner.id})
+      const response = await ApiService.deletePartner(partner.id)
+
+      if (response.error) {
+        setError(response.error.message || 'Failed to delete partner')
+        setShowDeleteDialog(false)
+        return
+      }
+
+      // Redirect to partners list on successful deletion
+      router.push('/partners')
+
+    } catch (err) {
+      setError(err.message || 'Failed to delete partner. Please try again.')
+      setShowDeleteDialog(false)
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  const handleCertificateReplace = (certId) => {
-    console.log('Replacing certificate:', certId)
+  const cancelDelete = () => {
+    setShowDeleteDialog(false)
+  }
+
+  const handleCertificateDownload = (certType) => {
+    console.log('Downloading certificate:', certType)
+    // TODO: Implement certificate download
+  }
+
+  const handleCertificateReplace = (certType) => {
+    setReplaceCertType(certType)
+    setNewCertFile(null)
+    setShowCertReplaceDialog(true)
+  }
+
+  const handleCertificateFileChange = (file) => {
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['.pem', '.crt', '.cer']
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase()
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      setError(`Invalid file type. Please upload a ${allowedTypes.join(', ')} file.`)
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      setError('File size too large. Please upload a file smaller than 5MB.')
+      return
+    }
+
+    setError(null)
+    setNewCertFile(file)
+  }
+
+  const confirmCertificateReplace = async () => {
+    if (!newCertFile || !replaceCertType) return
+
+    setUploadingCert(true)
+    setError(null)
+
+    try {
+      // Create form data for certificate replacement
+      const formData = new FormData()
+      if (replaceCertType === 'encryption') {
+        formData.append('encryption_certificate', newCertFile)
+      } else if (replaceCertType === 'signing') {
+        formData.append('signing_certificate', newCertFile)
+      }
+
+      const response = await ApiService.updatePartner(partner.id, formData)
+
+      if (response.error) {
+        setError(response.error.message || 'Failed to replace certificate')
+        return
+      }
+
+      // Update local state with new data
+      const { transformPartnerResponse } = await import('@/lib/partnerDataTransform')
+      const updatedPartner = transformPartnerResponse(response.data)
+      setPartner(updatedPartner)
+      setEditData(updatedPartner)
+      
+      // Close dialog
+      setShowCertReplaceDialog(false)
+      setNewCertFile(null)
+      setReplaceCertType(null)
+
+      console.log('Certificate replaced successfully')
+
+    } catch (err) {
+      setError(err.message || 'Failed to replace certificate. Please try again.')
+    } finally {
+      setUploadingCert(false)
+    }
+  }
+
+  const cancelCertificateReplace = () => {
+    setShowCertReplaceDialog(false)
+    setNewCertFile(null)
+    setReplaceCertType(null)
+    setError(null)
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading partner details...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/partners">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">Partner Details</h1>
+        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  // No partner found
+  if (!partner) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/partners">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">Partner Details</h1>
+        </div>
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>Partner not found.</AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
@@ -235,19 +321,15 @@ export default function PartnerDetailsPage() {
           </Button>
           <div>
             <div className="flex items-center space-x-3">
-              <h1 className="text-3xl font-bold tracking-tight">{partnerData.name}</h1>
-              {getStatusBadge(partnerData.status)}
+              <h1 className="text-3xl font-bold tracking-tight">{partner.name}</h1>
+              {getStatusBadge(partner.status)}
             </div>
             <p className="text-muted-foreground">
-              AS2 ID: {partnerData.as2Id} • {partnerData.organizationType === 'regulatory' ? 'Regulatory Agency' : 'MAH'}
+              AS2 ID: {partner.as2Id} • {organizationTypeLabels[partner.organizationType] || partner.organizationType}
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleTest}>
-            <TestTube className="mr-2 h-4 w-4" />
-            Test Connection
-          </Button>
           <Button variant="outline" onClick={handleEdit}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Configuration
@@ -282,68 +364,88 @@ export default function PartnerDetailsPage() {
               <CardContent className="space-y-4">
                 {isEditing ? (
                   <div className="space-y-4">
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="name">Partner Name</Label>
                       <Input
                         id="name"
-                        value={editData.name}
+                        value={editData.name || ''}
                         onChange={(e) => setEditData({...editData, name: e.target.value})}
+                        disabled={saving}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contactName">Contact Name</Label>
                       <Input
                         id="contactName"
-                        value={editData.contactName}
+                        value={editData.contactName || ''}
                         onChange={(e) => setEditData({...editData, contactName: e.target.value})}
+                        disabled={saving}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contactEmail">Contact Email</Label>
                       <Input
                         id="contactEmail"
-                        value={editData.contactEmail}
+                        value={editData.contactEmail || ''}
                         onChange={(e) => setEditData({...editData, contactEmail: e.target.value})}
+                        disabled={saving}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="contactPhone">Contact Phone</Label>
                       <Input
                         id="contactPhone"
-                        value={editData.contactPhone}
+                        value={editData.contactPhone || ''}
                         onChange={(e) => setEditData({...editData, contactPhone: e.target.value})}
+                        disabled={saving}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="notes">Notes</Label>
                       <Textarea
                         id="notes"
-                        value={editData.notes}
+                        value={editData.notes || ''}
                         onChange={(e) => setEditData({...editData, notes: e.target.value})}
+                        disabled={saving}
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button onClick={handleSave}>Save Changes</Button>
-                      <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                      <Button onClick={handleSave} disabled={saving}>
+                        {saving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Changes'
+                        )}
+                      </Button>
+                      <Button variant="outline" onClick={handleCancel} disabled={saving}>Cancel</Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div>
                       <Label className="text-sm text-muted-foreground">Contact Name</Label>
-                      <p className="font-medium">{partnerData.contactName}</p>
+                      <p className="font-medium">{partner.contactName}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Contact Email</Label>
-                      <p className="font-medium">{partnerData.contactEmail}</p>
+                      <p className="font-medium">{partner.contactEmail}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Contact Phone</Label>
-                      <p className="font-medium">{partnerData.contactPhone}</p>
+                      <p className="font-medium">{partner.contactPhone}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Notes</Label>
-                      <p className="text-sm">{partnerData.notes}</p>
+                      <p className="text-sm">{partner.notes}</p>
                     </div>
                   </div>
                 )}
@@ -382,21 +484,8 @@ export default function PartnerDetailsPage() {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {activityLog.slice(0, 3).map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <Activity className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.details}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.user} • {new Date(activity.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-4 text-muted-foreground">
+                Recent activity will be displayed here.
               </div>
             </CardContent>
           </Card>
@@ -416,29 +505,29 @@ export default function PartnerDetailsPage() {
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm text-muted-foreground">AS2 Station ID</Label>
-                    <p className="font-medium font-mono">{partnerData.as2StationId}</p>
+                    <p className="font-medium font-mono">{partner.as2StationId}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Partner URL</Label>
-                    <p className="font-medium font-mono text-sm">{partnerData.partnerUrl}</p>
+                    <p className="font-medium font-mono text-sm">{partner.partnerUrl}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Subject Template</Label>
-                    <p className="font-medium text-sm">{partnerData.subjectTemplate}</p>
+                    <p className="font-medium text-sm">{partner.subjectTemplate}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm text-muted-foreground">Encryption Algorithm</Label>
-                    <p className="font-medium">{partnerData.encryptionAlgorithm}</p>
+                    <p className="font-medium">{partner.encryptionAlgorithm}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Signing Algorithm</Label>
-                    <p className="font-medium">{partnerData.signingAlgorithm}</p>
+                    <p className="font-medium">{partner.signingAlgorithm}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Compression</Label>
-                    <p className="font-medium">{partnerData.compression ? 'Enabled (ZLIB)' : 'Disabled'}</p>
+                    <p className="font-medium">{partner.compression ? 'Enabled (ZLIB)' : 'Disabled'}</p>
                   </div>
                 </div>
               </div>
@@ -449,30 +538,30 @@ export default function PartnerDetailsPage() {
                   <div className="space-y-4">
                     <div>
                       <Label className="text-sm text-muted-foreground">Request Signed MDN</Label>
-                      <p className="font-medium">{partnerData.requestSignedMdn ? 'Yes' : 'No'}</p>
+                      <p className="font-medium">{partner.requestSignedMdn ? 'Yes' : 'No'}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Delivery Method</Label>
-                      <p className="font-medium">{partnerData.mdnDeliveryMethod}</p>
+                      <p className="font-medium">{partner.mdnDeliveryMethod}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Timeout</Label>
-                      <p className="font-medium">{partnerData.mdnTimeout} minutes</p>
+                      <p className="font-medium">{partner.mdnTimeout} minutes</p>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
                       <Label className="text-sm text-muted-foreground">Signing Algorithm</Label>
-                      <p className="font-medium">{partnerData.mdnSigningAlgorithm}</p>
+                      <p className="font-medium">{partner.mdnSigningAlgorithm}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-muted-foreground">Auto Retry</Label>
-                      <p className="font-medium">{partnerData.enableRetry ? 'Enabled' : 'Disabled'}</p>
+                      <p className="font-medium">{partner.enableRetry ? 'Enabled' : 'Disabled'}</p>
                     </div>
-                    {partnerData.enableRetry && (
+                    {partner.enableRetry && (
                       <div>
                         <Label className="text-sm text-muted-foreground">Retry Settings</Label>
-                        <p className="font-medium">{partnerData.maxRetries} attempts, {partnerData.retryInterval}min interval</p>
+                        <p className="font-medium">{partner.maxRetries} attempts, {partner.retryInterval}min interval</p>
                       </div>
                     )}
                   </div>
@@ -485,71 +574,120 @@ export default function PartnerDetailsPage() {
         {/* Certificates Tab */}
         <TabsContent value="certificates" className="space-y-6">
           <div className="grid gap-6">
-            {certificatesData.map((cert) => {
-              const certStatus = getCertificateStatus(cert.validTo)
-              
-              return (
-                <Card key={cert.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center">
-                        <Shield className="mr-2 h-5 w-5" />
-                        {cert.type} Certificate
-                      </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-sm font-medium ${certStatus.color}`}>
-                          {certStatus.text}
-                        </span>
-                        <Button variant="outline" size="sm" onClick={() => handleCertificateDownload(cert.id)}>
-                          <Download className="mr-2 h-4 w-4" />
-                          Download
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleCertificateReplace(cert.id)}>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Replace
-                        </Button>
+            {/* Encryption Certificate */}
+            {partner.encryptionCertExpiry && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center">
+                      <Shield className="mr-2 h-5 w-5" />
+                      Encryption Certificate
+                    </CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm font-medium ${getCertificateStatus(partner.encryptionCertExpiry).color}`}>
+                        {getCertificateStatus(partner.encryptionCertExpiry).text}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => handleCertificateDownload('encryption')}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleCertificateReplace('encryption')}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Replace
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Subject DN</Label>
+                        <p className="font-mono text-sm">{partner.encryptionCertSubjectDn || 'Not available'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Issuer DN</Label>
+                        <p className="font-mono text-sm">{partner.encryptionCertIssuerDn || 'Not available'}</p>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Subject DN</Label>
-                          <p className="font-mono text-sm">{cert.subjectDn}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Issuer DN</Label>
-                          <p className="font-mono text-sm">{cert.issuerDn}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Serial Number</Label>
-                          <p className="font-mono text-sm">{cert.serialNumber}</p>
-                        </div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Valid To</Label>
+                        <p className="text-sm">{new Date(partner.encryptionCertExpiry).toLocaleDateString()}</p>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Valid From</Label>
-                          <p className="text-sm">{new Date(cert.validFrom).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Valid To</Label>
-                          <p className="text-sm">{new Date(cert.validTo).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Key Size</Label>
-                          <p className="text-sm">{cert.keySize}</p>
-                        </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Fingerprint</Label>
+                        <p className="font-mono text-xs break-all">{partner.encryptionCertFingerprint || 'Not available'}</p>
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">Fingerprint (SHA-256)</Label>
-                      <p className="font-mono text-xs break-all">{cert.fingerprint}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Signing Certificate */}
+            {partner.signingCertExpiry && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center">
+                      <Shield className="mr-2 h-5 w-5" />
+                      Signing Certificate
+                    </CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm font-medium ${getCertificateStatus(partner.signingCertExpiry).color}`}>
+                        {getCertificateStatus(partner.signingCertExpiry).text}
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => handleCertificateDownload('signing')}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleCertificateReplace('signing')}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Replace
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Subject DN</Label>
+                        <p className="font-mono text-sm">{partner.signingCertSubjectDn || 'Not available'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Issuer DN</Label>
+                        <p className="font-mono text-sm">{partner.signingCertIssuerDn || 'Not available'}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Valid To</Label>
+                        <p className="text-sm">{new Date(partner.signingCertExpiry).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Fingerprint</Label>
+                        <p className="font-mono text-xs break-all">{partner.signingCertFingerprint || 'Not available'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* No certificates message */}
+            {!partner.encryptionCertExpiry && !partner.signingCertExpiry && (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Certificates Found</h3>
+                  <p className="text-muted-foreground">
+                    No certificate information is available for this partner.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -563,32 +701,8 @@ export default function PartnerDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {messageHistory.map((message) => (
-                  <div key={message.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      {getMessageStatusIcon(message.status)}
-                      <div>
-                        <p className="font-medium">{message.filename}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {message.id} • {message.direction === 'outbound' ? 'Sent' : 'Received'} {' '}
-                          {new Date(message.sentAt || message.receivedAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {message.mdnReceived && (
-                        <Badge variant="outline" className="text-green-600">MDN ✓</Badge>
-                      )}
-                      {message.businessAck === 'accepted' && (
-                        <Badge variant="outline" className="text-green-600">ACK2 ✓</Badge>
-                      )}
-                      {message.validated && (
-                        <Badge variant="outline" className="text-green-600">Validated ✓</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-muted-foreground">
+                Message history will be implemented in a future update.
               </div>
             </CardContent>
           </Card>
@@ -604,26 +718,150 @@ export default function PartnerDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {activityLog.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 pb-4 border-b last:border-b-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <Activity className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{activity.details}</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {activity.user} • {new Date(activity.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-muted-foreground">
+                Activity log will be implemented in a future update.
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="flex items-center text-red-600">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Delete Partner
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p>
+                Are you sure you want to delete <strong>{partner.name}</strong>? 
+                This action cannot be undone and will remove all partner data including:
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                <li>• Partner configuration</li>
+                <li>• Certificate information</li>
+                <li>• Message history</li>
+                <li>• Activity logs</li>
+              </ul>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={cancelDelete} disabled={deleting}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+                  {deleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Partner
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Certificate Replace Dialog */}
+      {showCertReplaceDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Upload className="mr-2 h-5 w-5" />
+                Replace {replaceCertType === 'encryption' ? 'Encryption' : 'Signing'} Certificate
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="space-y-2">
+                <Label>Select New Certificate File</Label>
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors"
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.add('border-primary')
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('border-primary')
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('border-primary')
+                    const files = e.dataTransfer.files
+                    if (files.length > 0) {
+                      handleCertificateFileChange(files[0])
+                    }
+                  }}
+                >
+                  <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {newCertFile ? (
+                      <span className="text-green-600 font-medium">{newCertFile.name}</span>
+                    ) : (
+                      'Drag and drop certificate file here, or click to browse'
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Accepts .pem, .crt, .cer files (max 5MB)
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pem,.crt,.cer"
+                    onChange={(e) => handleCertificateFileChange(e.target.files[0])}
+                    className="hidden"
+                    id="cert-replace-upload"
+                    disabled={uploadingCert}
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="mt-2" 
+                    disabled={uploadingCert}
+                    onClick={() => document.getElementById('cert-replace-upload').click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {newCertFile ? 'Change File' : 'Browse Files'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={cancelCertificateReplace} disabled={uploadingCert}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmCertificateReplace} disabled={!newCertFile || uploadingCert}>
+                  {uploadingCert ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Replace Certificate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

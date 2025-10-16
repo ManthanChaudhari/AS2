@@ -77,9 +77,9 @@ function SidebarContent({ onItemClick }) {
                     <Button
                       variant="ghost"
                       className={cn(
-                        "group relative w-full justify-between px-3 py-5 text-left font-medium rounded-xl",
+                        "group relative w-full justify-between px-3 py-5 text-left font-medium",
                         isOpen || hasActive
-                          ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                          ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200"
                           : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                       )}
                     >
@@ -127,9 +127,9 @@ function SidebarContent({ onItemClick }) {
                         size="sm"
                         asChild
                         className={cn(
-                          "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium rounded-xl text-sm transition-all duration-200 hover:scale-[1.02]",
+                          "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium text-sm transition-all duration-200 hover:scale-[1.02]",
                           isActive(subItem.href)
-                            ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                            ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200"
                             : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                         )}
                         onClick={onItemClick}
@@ -169,9 +169,9 @@ function SidebarContent({ onItemClick }) {
                   variant="ghost"
                   asChild
                   className={cn(
-                    "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium rounded-xl text-sm transition-all duration-200 hover:scale-[1.02]",
+                    "group relative w-full justify-start gap-3 px-3 py-[1.27rem] font-medium text-sm transition-all duration-200 hover:scale-[1.02]",
                     isActive(item.href)
-                      ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200 shadow-sm"
+                      ? "bg-gradient-to-r from-blue-600/15 to-blue-500/10 text-blue-700 border border-blue-200"
                       : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 hover:text-blue-700"
                   )}
                   onClick={onItemClick}

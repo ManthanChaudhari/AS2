@@ -82,6 +82,8 @@ const useAuth = () => {
 
     // Clear tokens from ApiService
     ApiService.clearTokens();
+    Cookies.remove('token');
+    Cookies.remove('refresh_token');
 
     // Clear refresh interval
     if (refreshIntervalRef.current) {

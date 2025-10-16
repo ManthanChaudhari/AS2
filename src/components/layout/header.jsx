@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
+import { useAuth } from '@/context/AuthContext'
 import { 
   Bell, 
   Search, 
@@ -29,13 +30,15 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { MobileSidebar } from './sidebar'
 
-// Dummy user data
-const userData = {
-  name: 'John Doe',
-  email: 'john.doe@acmepharma.com',
-  role: 'System Administrator',
-  avatar: null,
-  initials: 'JD'
+// Helper function to get user initials
+const getUserInitials = (name) => {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 // Dummy notifications
@@ -174,31 +177,50 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
-  const handleLogout = () => {
-    console.log('Logging out...')
-    // In real app: clear auth state and redirect to login
-  }
+  const { user, logout, isLoading } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Fallback user data if not loaded yet
+  const displayUser = user || {
+    name: 'Loading...',
+    email: 'loading@example.com',
+    role: 'Loading...'
+  };
+
+  const userInitials = getUserInitials(displayUser.name);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full" disabled={isLoading}>
           <Avatar className="h-10 w-10">
-            <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback className="bg-blue-100 text-primary">{userData.initials}</AvatarFallback>
+            <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
+            <AvatarFallback className="bg-blue-100 text-primary">{userInitials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{userData.name}</p>
+            <p className="text-sm font-medium leading-none">{displayUser.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {userData.email}
+              {displayUser.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {userData.role}
+              {displayUser.role}
             </p>
+            {displayUser.organization && (
+              <p className="text-xs leading-none text-muted-foreground">
+                {displayUser.organization.name}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -211,9 +233,9 @@ function UserDropdown() {
           <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem onClick={handleLogout} disabled={isLoading}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{isLoading ? 'Logging out...' : 'Log out'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

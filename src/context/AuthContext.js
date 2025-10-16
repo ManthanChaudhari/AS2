@@ -1,75 +1,91 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  login,
-  logout,
-  refreshAccessToken,
-} from "@/slices/authSlice"; // adjust import path
-import ApiService from "@/lib/ApiServiceFunctions";
-import ApiEndPoints from "@/lib/ApiServiceEndpoint";
+import { createContext, useContext, useMemo, useEffect, useState } from "react";
+import useAuthHook from "@/hooks/useAuth";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const dispatch = useDispatch();
-  const router = useRouter();
+  const auth = useAuthHook();
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const { user, accessToken, refreshToken, loading } = useSelector(
-    (state) => state.auth
-  );
+  // Initialize the auth provider and restore session
+  useEffect(() => {
+    const initializeAuth = async () => {
+      // Check if we're in the browser
+      if (typeof window !== 'undefined') {
+        const hasStoredTokens = localStorage.getItem('token') && localStorage.getItem('refresh_token');
+        
+        if (hasStoredTokens && !auth.isAuthenticated && !auth.isLoading) {
+          // Try to restore session
+          await auth.restoreSession();
+        }
+      }
+      
+      setIsInitialized(true);
+    };
 
-  // Decode token & manage roles/permissions
-  // useEffect(() => {
-  //   try {
-  //     if (!accessToken) {
-  //       router.push("/login");
-  //       return;
-  //     }
+    initializeAuth();
+  }, [auth.restoreSession, auth.isAuthenticated, auth.isLoading]);
 
-  //     const decoded = jwtDecode(accessToken);
-  //     ApiService?.setToken(accessToken);
-  //     ApiService?.setRefreshToken(refreshToken);
+  // Debug: Log authentication state changes in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Auth state changed:', {
+        isAuthenticated: auth.isAuthenticated,
+        user: auth.user?.email || 'No user',
+        isLoading: auth.isLoading,
+        error: auth.error,
+        isInitialized
+      });
+    }
+  }, [auth.isAuthenticated, auth.user, auth.isLoading, auth.error, isInitialized]);
 
-  //     // Example: you can dispatch to store user details if needed
-  //     // dispatch(setUser(decoded));
-  //   } catch (error) {
-  //     console.error("Token decode error:", error);
-  //     dispatch(logout());
-  //     router.push("/login");
-  //   }
-  // }, []);
-
-  // ⏱️ Auto-refresh token every 10 minutes
-  // useEffect(() => {
-  //   if (!refreshToken) return;
-
-  //   const refreshFn = async () => {
-  //     dispatch(refreshAccessToken(refreshToken));
-  //   };
-
-  //   refreshFn();
-  //   const interval = setInterval(refreshFn, 10 * 60 * 1000); // every 10 minutes
-
-  //   return () => clearInterval(interval);
-  // }, [refreshToken]);
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    // State
+    user: auth.user,
+    isAuthenticated: auth.isAuthenticated,
+    isLoading: auth.isLoading || !isInitialized,
+    error: auth.error,
+    isInitialized,
+    
+    // Methods
+    login: auth.login,
+    logout: auth.logout,
+    register: auth.register,
+    getCurrentUser: auth.getCurrentUser,
+    refreshToken: auth.refreshToken,
+    clearError: auth.clearError,
+    restoreSession: auth.restoreSession,
+    updateUserProfile: auth.updateUserProfile,
+    
+    // Utility methods
+    hasRole: auth.hasRole,
+    hasPermission: auth.hasPermission,
+    
+    // Auto-refresh controls
+    startAutoRefresh: auth.startAutoRefresh,
+    stopAutoRefresh: auth.stopAutoRefresh,
+  }), [auth, isInitialized]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        refreshToken,
-        loading,
-        logout: () => dispatch(logout()),
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
+};
+
+// Export the context for advanced use cases
+export { AuthContext };

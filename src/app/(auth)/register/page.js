@@ -1,11 +1,13 @@
 "use client";
 
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import ErrorHandler from "@/lib/errorHandler";
 import {
   Building2,
   User,
@@ -99,10 +101,16 @@ const industryTypes = [
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [verificationSent, setVerificationSent] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const router = useRouter();
+  
+  // Use the authentication hook
+  const { register, isLoading, error: authError, clearError, isAuthenticated } = useAuth();
+  const [localError, setLocalError] = useState("");
+  
+  // Combined error from auth hook and local state
+  const error = authError || localError;
 
   // Forms for each step
   const step1Form = useForm({
@@ -152,22 +160,58 @@ export default function RegisterPage() {
 
   const currentForm = steps[currentStep - 1].form;
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearError();
+    setLocalError("");
+  }, [clearError]);
+
   const onStepSubmit = async (data) => {
-    setIsLoading(true);
-    setError("");
+    setLocalError("");
+    clearError();
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       if (currentStep === 2) {
-        // Send verification email
+        // Collect all form data for registration
+        const step1Data = step1Form.getValues();
+        const registrationData = {
+          // Company details
+          organization: {
+            name: step1Data.companyName,
+            address: step1Data.address,
+            city: step1Data.city,
+            country: step1Data.country,
+            type: step1Data.industryType
+          },
+          // User details
+          name: `${data.firstName} ${data.lastName}`,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password
+        };
+
+        const result = await register(registrationData);
+        
+        if (result.error) {
+          setLocalError(ErrorHandler.getUserMessage(result));
+          return;
+        }
+
+        // Registration successful, show verification step
         setVerificationSent(true);
-        console.log("Verification email sent to:", data.email);
+        console.log("Registration successful, verification email sent");
       }
 
       if (currentStep === 4) {
-        // Complete registration
+        // Complete registration process
         setRegistrationComplete(true);
         console.log("Registration completed successfully");
         return;
@@ -176,9 +220,7 @@ export default function RegisterPage() {
       // Move to next step
       setCurrentStep((prev) => prev + 1);
     } catch (err) {
-      setError(err.message || "An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setLocalError(err.message || "An error occurred. Please try again.");
     }
   };
 
@@ -189,15 +231,14 @@ export default function RegisterPage() {
   };
 
   const resendVerification = async () => {
-    setIsLoading(true);
+    setLocalError("");
     try {
+      // In a real app, this would call an API to resend verification
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Verification code resent");
       setVerificationSent(true);
     } catch (err) {
-      setError("Failed to resend verification code");
-    } finally {
-      setIsLoading(false);
+      setLocalError("Failed to resend verification code");
     }
   };
 

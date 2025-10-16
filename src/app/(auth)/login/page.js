@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
 import { Eye, EyeOff, Shield, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import ErrorHandler from "@/lib/errorHandler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +23,6 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { useRouter } from "next/navigation";
 
 // Validation schema
 const loginSchema = z.object({
@@ -39,10 +41,15 @@ const mfaSchema = z.object({
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showMFA, setShowMFA] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [loginAttempts, setLoginAttempts] = useState(0);
   const router = useRouter();
+  
+  // Use the authentication hook
+  const { login, isLoading, error: authError, clearError, isAuthenticated } = useAuth();
+  const [localError, setLocalError] = useState("");
+  
+  // Combined error from auth hook and local state
+  const error = authError || localError;
 
   // Login form
   const loginForm = useForm({
@@ -62,45 +69,50 @@ export default function LoginPage() {
     },
   });
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearError();
+    setLocalError("");
+  }, [clearError]);
+
   const onLoginSubmit = async (data) => {
-    setIsLoading(true);
-    setError("");
+    setLocalError("");
+    clearError();
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const result = await login({
+        email: data.email,
+        password: data.password
+      });
 
-      // Simulate MFA requirement for demo
-      setShowMFA(true);
-      setIsLoading(false);
-
-      // Simulate login failure for demo
-      if (data.password === "wrong") {
+      if (result.error) {
         setLoginAttempts((prev) => prev + 1);
-        throw new Error("Invalid email or password");
+        setLocalError(ErrorHandler.getUserMessage(result));
+        
+        // Account lockout simulation
+        if (loginAttempts >= 4) {
+          setLocalError(
+            "Account locked due to too many failed attempts. Please contact support."
+          );
+        }
+      } else {
+        // Success - redirect will happen automatically via useEffect
+        console.log('Login successful');
       }
-
-      // Success - redirect to dashboard
-      console.log('Login successful:', data)
-      router.push('/dashboard')
-
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.')
-
-      // Account lockout simulation
-      if (loginAttempts >= 4) {
-        setError(
-          "Account locked due to too many failed attempts. Please contact support."
-        );
-      }
-    } finally {
-      setIsLoading(false);
+      setLocalError(err.message || 'Login failed. Please try again.');
     }
   };
 
   const onMFASubmit = async (data) => {
-    setIsLoading(true);
-    setError("");
+    setLocalError("");
 
     try {
       // Simulate MFA verification
@@ -110,9 +122,7 @@ export default function LoginPage() {
       console.log("MFA verification successful");
       router.push("/dashboard");
     } catch (err) {
-      setError(err.message || "MFA verification failed");
-    } finally {
-      setIsLoading(false);
+      setLocalError(err.message || "MFA verification failed");
     }
   };
 
@@ -173,7 +183,11 @@ export default function LoginPage() {
               type="button"
               variant="ghost"
               className="w-full"
-              onClick={() => setShowMFA(false)}
+              onClick={() => {
+                setShowMFA(false);
+                clearError();
+                setLocalError("");
+              }}
               disabled={isLoading}
             >
               Back to Login

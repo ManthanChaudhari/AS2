@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import Cookies from 'js-cookie';
-import ApiService from '@/lib/ApiServiceFunctions';
-import ErrorHandler from '@/lib/errorHandler';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import Cookies from "js-cookie";
+import ApiService from "@/lib/ApiServiceFunctions";
+import ErrorHandler from "@/lib/errorHandler";
 import {
   loginStart,
   loginSuccess,
@@ -14,8 +14,8 @@ import {
   refreshTokenSuccess,
   refreshTokenFailure,
   clearError,
-  updateUser
-} from '@/slices/authSlice';
+  updateUser,
+} from "@/slices/authSlice";
 
 const useAuth = () => {
   const dispatch = useDispatch();
@@ -31,108 +31,117 @@ const useAuth = () => {
   const isAuthenticated = Boolean(user && accessToken);
 
   // Login method
-  const login = useCallback(async (credentials) => {
-    dispatch(loginStart());
+  const login = useCallback(
+    async (credentials) => {
+      dispatch(loginStart());
 
-    const result = await ApiService.loginUser(credentials);
+      const result = await ApiService.loginUser(credentials);
 
-    if (result.error) {
-      dispatch(loginFailure(result.error.message));
+      if (result.error) {
+        dispatch(loginFailure(result.error.message));
+        return result;
+      }
+
+      const { access_token, refresh_token, user: userData } = result.data;
+
+      // Store tokens in ApiService
+      ApiService.setToken(access_token);
+      ApiService.setRefreshToken(refresh_token);
+
+      // Store tokens in localStorage and cookies
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", access_token);
+        localStorage.setItem("refresh_token", refresh_token);
+
+        // Store in cookies for middleware access (secure, httpOnly in production)
+        Cookies.set("token", access_token, {
+          expires: 1, // 1 day
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        });
+        Cookies.set("refresh_token", refresh_token, {
+          expires: 7, // 7 days
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        });
+      }
+
+      // Update Redux state
+      dispatch(
+        loginSuccess({
+          user: userData,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        })
+      );
+
       return result;
-    }
-
-    const { access_token, refresh_token, user: userData } = result.data;
-
-    // Store tokens in ApiService
-    ApiService.setToken(access_token);
-    ApiService.setRefreshToken(refresh_token);
-
-    // Store tokens in localStorage and cookies
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      
-      // Store in cookies for middleware access (secure, httpOnly in production)
-      Cookies.set('token', access_token, { 
-        expires: 1, // 1 day
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-      Cookies.set('refresh_token', refresh_token, { 
-        expires: 7, // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-    }
-
-    // Update Redux state
-    dispatch(loginSuccess({
-      user: userData,
-      accessToken: access_token,
-      refreshToken: refresh_token
-    }));
-
-    return result;
-  }, [dispatch]);
+    },
+    [dispatch]
+  );
 
   // Logout method
-  const logout = useCallback(async (showMessage = true, reason = 'logout') => {
-    // Call logout API
-    await ApiService.logoutUser();
+  const logout = useCallback(
+    async (showMessage = true, reason = "logout") => {
+      // Call logout API
+      await ApiService.logoutUser();
 
-    // Clear tokens from ApiService
-    ApiService.clearTokens();
-    Cookies.remove('token');
-    Cookies.remove('refresh_token');
+      // Clear tokens from ApiService
+      ApiService.clearTokens();
+      Cookies.remove("token");
+      Cookies.remove("refresh_token");
 
-    // Clear refresh interval
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-
-    // Update Redux state
-    dispatch(logoutAction());
-
-    // Show appropriate message based on reason
-    if (showMessage) {
-      switch (reason) {
-        case 'session_expired':
-          toast.error('Your session has expired. Please log in again.');
-          break;
-        case 'token_refresh_failed':
-          toast.error('Unable to refresh your session. Please log in again.');
-          break;
-        case 'invalid_token':
-          toast.error('Invalid session detected. Please log in again.');
-          break;
-        case 'logout':
-        default:
-          toast.success('You have been logged out successfully.');
-          break;
+      // Clear refresh interval
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
       }
-    }
 
-    // Redirect to login
-    router.push('/login');
-  }, [dispatch, router, refreshInterval]);
+      // Update Redux state
+      dispatch(logoutAction());
+
+      // Show appropriate message based on reason
+      if (showMessage) {
+        switch (reason) {
+          case "session_expired":
+            toast.error("Your session has expired. Please log in again.");
+            break;
+          case "token_refresh_failed":
+            toast.error("Unable to refresh your session. Please log in again.");
+            break;
+          case "invalid_token":
+            toast.error("Invalid session detected. Please log in again.");
+            break;
+          case "logout":
+          default:
+            toast.success("You have been logged out successfully.");
+            break;
+        }
+      }
+
+      // Redirect to login
+      router.push("/login");
+    },
+    [dispatch, router, refreshInterval]
+  );
 
   // Register method
-  const register = useCallback(async (userData) => {
-    dispatch(loginStart()); // Using same loading state
+  const register = useCallback(
+    async (userData) => {
+      // dispatch(loginStart());
 
-    const result = await ApiService.registerUser(userData);
+      const result = await ApiService.registerUser(userData);
 
-    if (result.error) {
-      dispatch(loginFailure(result.error.message));
+      if (result.error) {
+        dispatch(loginFailure(result.error.message));
+        return result;
+      }
+
+      dispatch(clearError());
       return result;
-    }
-
-    // Registration successful - user might need to verify email
-    // Don't automatically log them in, just return success
-    dispatch(clearError());
-    return result;
-  }, [dispatch]);
+    },
+    [dispatch]
+  );
 
   // Get current user method
   const getCurrentUser = useCallback(async () => {
@@ -141,17 +150,19 @@ const useAuth = () => {
     if (result.error) {
       // If unauthorized, logout user with appropriate message
       if (result.error.status === 401) {
-        await logout(true, 'session_expired');
+        await logout(true, "session_expired");
       }
       return result;
     }
 
     // Update user data in Redux state
-    dispatch(loginSuccess({
-      user: result.data,
-      accessToken,
-      refreshToken
-    }));
+    dispatch(
+      loginSuccess({
+        user: result.data,
+        accessToken,
+        refreshToken,
+      })
+    );
 
     return result;
   }, [dispatch, accessToken, refreshToken]); // Remove logout from dependencies to prevent circular dependency
@@ -165,7 +176,7 @@ const useAuth = () => {
     if (result.error) {
       dispatch(refreshTokenFailure());
       // If refresh fails, logout user with appropriate message
-      await logout(true, 'token_refresh_failed');
+      await logout(true, "token_refresh_failed");
       return result;
     }
 
@@ -176,16 +187,18 @@ const useAuth = () => {
     ApiService.setRefreshToken(newRefreshToken);
 
     // Store new tokens in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('refresh_token', newRefreshToken);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("refresh_token", newRefreshToken);
     }
 
     // Update Redux state
-    dispatch(refreshTokenSuccess({
-      accessToken: access_token,
-      refreshToken: newRefreshToken
-    }));
+    dispatch(
+      refreshTokenSuccess({
+        accessToken: access_token,
+        refreshToken: newRefreshToken,
+      })
+    );
 
     return result;
   }, [dispatch, logout]);
@@ -195,46 +208,29 @@ const useAuth = () => {
     dispatch(clearError());
   }, [dispatch]);
 
-  // Start automatic refresh
-  const startAutoRefresh = useCallback(() => {
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-    }
-
-    const interval = setInterval(async () => {
-      console.log('Auto-refreshing token...');
-      const result = await refreshTokens();
-
-      if (result && result.error) {
-        console.error('Auto-refresh failed:', result.error);
-      }
-    }, 10 * 60 * 1000); // 10 minutes
-
-    refreshIntervalRef.current = interval;
-  }, [refreshTokens]);
-
-  // Stop automatic refresh
-  const stopAutoRefresh = useCallback(() => {
-    if (refreshIntervalRef.current) {
-      clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-  }, []);
-
   // Update user profile
-  const updateUserProfile = useCallback((userData) => {
-    dispatch(updateUser(userData));
-  }, [dispatch]);
+  const updateUserProfile = useCallback(
+    (userData) => {
+      dispatch(updateUser(userData));
+    },
+    [dispatch]
+  );
 
   // Get user role and permissions
-  const hasRole = useCallback((role) => {
-    return user?.role === role;
-  }, [user]);
+  const hasRole = useCallback(
+    (role) => {
+      return user?.role === role;
+    },
+    [user]
+  );
 
-  const hasPermission = useCallback((permission) => {
-    // This can be expanded based on your permission system
-    return user?.permissions?.includes(permission) || false;
-  }, [user]);
+  const hasPermission = useCallback(
+    (permission) => {
+      // This can be expanded based on your permission system
+      return user?.permissions?.includes(permission) || false;
+    },
+    [user]
+  );
 
   // Check session validity
   const isSessionValid = useCallback(() => {
@@ -292,16 +288,18 @@ const useAuth = () => {
 
     // Warn user if session expires in 5 minutes or less
     if (minutesUntilExpiry <= 5 && minutesUntilExpiry > 0) {
-      toast.warning(`Your session will expire in ${minutesUntilExpiry} minute(s). Activity will extend your session.`);
+      toast.warning(
+        `Your session will expire in ${minutesUntilExpiry} minute(s). Activity will extend your session.`
+      );
     }
   }, [isAuthenticated]);
 
   // Session restoration on app load
   const restoreSession = useCallback(async () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const storedToken = localStorage.getItem('token');
-    const storedRefreshToken = localStorage.getItem('refresh_token');
+    const storedToken = localStorage.getItem("token");
+    const storedRefreshToken = localStorage.getItem("refresh_token");
 
     if (storedToken && storedRefreshToken) {
       // Set tokens in ApiService
@@ -318,11 +316,13 @@ const useAuth = () => {
         // Don't show message for silent session restoration failure
       } else {
         // Token is valid, update Redux state
-        dispatch(loginSuccess({
-          user: result.data,
-          accessToken: storedToken,
-          refreshToken: storedRefreshToken
-        }));
+        dispatch(
+          loginSuccess({
+            user: result.data,
+            accessToken: storedToken,
+            refreshToken: storedRefreshToken,
+          })
+        );
       }
     }
   }, [dispatch]); // Remove getCurrentUser dependency and call ApiService directly
@@ -337,30 +337,18 @@ const useAuth = () => {
   // Automatic token refresh mechanism
   useEffect(() => {
     if (isAuthenticated && refreshToken) {
-      // Clear any existing interval first
+      
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
 
-      // Set up automatic refresh every 10 minutes (600,000 ms)
       const interval = setInterval(async () => {
-        console.log('Auto-refreshing token...');
+        const result = await refreshTokens();
 
-        // Check if token is close to expiring before refreshing
-        const currentToken = ApiService.getAcessToken();
-        if (ApiService.isTokenExpired(currentToken)) {
-          console.log('Token is expired or close to expiring, refreshing...');
-
-          const result = await refreshTokens();
-
-          if (result && result.error) {
-            console.error('Auto-refresh failed:', result.error);
-            // The refreshTokens method will handle logout on failure
-          } else {
-            console.log('Token refreshed successfully');
-          }
+        if (result && result.error) {
+          console.error("Auto-refresh failed:", result.error);
         } else {
-          console.log('Token is still valid, skipping refresh');
+          console.log("Token refreshed successfully");
         }
       }, 10 * 60 * 1000); // 10 minutes
 
@@ -381,15 +369,6 @@ const useAuth = () => {
     }
   }, [isAuthenticated, refreshToken]); // Remove refreshTokens from dependencies
 
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, []);
-
   return {
     // State
     user,
@@ -405,8 +384,6 @@ const useAuth = () => {
     refreshToken: refreshTokens,
     clearError: clearAuthError,
     restoreSession,
-    startAutoRefresh,
-    stopAutoRefresh,
     updateUserProfile,
 
     // Utility methods
@@ -415,8 +392,6 @@ const useAuth = () => {
     isSessionValid,
     validateSession,
     checkSessionExpiration,
-
-
   };
 };
 

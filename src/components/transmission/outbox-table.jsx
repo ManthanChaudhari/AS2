@@ -43,6 +43,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ApiService from "@/lib/ApiServiceFunctions";
 import ApiEndPoints from "@/lib/ApiServiceEndpoint";
 import { id } from "date-fns/locale";
+import { transformPartnersResponse } from "@/lib/partnerDataTransform";
 
 const statusLabels = {
   sending: "Sending",
@@ -137,13 +138,20 @@ function MessageActions({ message }) {
 
   const handleDownload = async () => {
     try {
-      console.log({ message });
       const res = await ApiService.get(
-        `${ApiEndPoints.AS2_TRANSMISSION.GET_SIGNED_URL}/${message?.message_id}`
+        `${ApiEndPoints?.AS2_TRANSMISSION?.DOWNLOAD_URL}/${message?.message_id}/download?artifact_type=status`
       );
-      console.log({ res });
+
+      const { download_url } = res?.data || {};
+
+      if (!download_url) {
+        console.error("No presigned URL found in response");
+        return;
+      }
+
+      window.open(download_url, "_blank");
     } catch (error) {
-      console.log("handleDownload Error : ", error?.message);
+      console.error("handleDownload Error:", error?.message);
     }
   };
 
@@ -187,27 +195,66 @@ export function OutboxTable() {
   const [messages, setMessages] = useState([]);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [partnerFilter, setPartnerFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [partnerFilter, setPartnerFilter] = useState(null);
+  const [priorityFilter, setPriorityFilter] = useState(null);
   const [sortField, setSortField] = useState("sentAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+  const [totalMessages, setTotalMessages] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [partners, setPartners] = useState([]);
+
+  // Fetch partners from API
+  const fetchPartners = async () => {
+    try {
+      const response = await ApiService.getPartners();
+
+      if (response.error) {
+        setPartners([]);
+      } else {
+        // Transform API response to UI format
+        const transformedPartners = transformPartnersResponse(
+          response.data.items || response.data.data || []
+        );
+        setPartners(transformedPartners);
+      }
+    } catch (err) {
+      console.log("fetchPartners Error : ", err?.message);
+      setPartners([]);
+    }
+  };
+
+  // Fetch partners on component mount and when filters change
+  useEffect(() => {
+    fetchPartners();
+  }, []);
 
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
+      const params = new URLSearchParams();
+
+      if (currentPage) params.append("page", currentPage);
+      if (pageSize) params.append("size", pageSize);
+      if (searchQuery) params.append("search", searchQuery);
+      if (statusFilter) params.append("status", statusFilter);
+      if (partnerFilter?.id) params.append("partner_id", partnerFilter?.id);
+      if (priorityFilter) params.append("priority", priorityFilter);
+
       const response = await ApiService.get(
-        `${ApiEndPoints.AS2_TRANSMISSION.GET_HISTORY}`
+        `${ApiEndPoints.AS2_TRANSMISSION.GET_HISTORY}?${params.toString()}`
       );
 
       if (response.error) {
         console.error("Failed to fetch partner stats:", response.error);
       } else {
         setMessages(response.data.items);
+        setTotalMessages(response.data.total);
+        setTotalPages(response.data.pages);
       }
     } catch (err) {
       console.error("Error fetching partner stats:", err);
@@ -218,10 +265,16 @@ export function OutboxTable() {
 
   useEffect(() => {
     fetchMessages();
-  }, []);
+  }, [
+    currentPage,
+    pageSize,
+    searchQuery,
+    statusFilter,
+    partnerFilter,
+    priorityFilter,
+  ]);
 
   // Get unique partners for filter
-  const uniquePartners = [...new Set(messages.map((m) => m.recipient))];
 
   // Filter and sort messages
   const filteredMessages = messages
@@ -253,12 +306,8 @@ export function OutboxTable() {
     });
 
   // Pagination
-  const totalPages = Math.ceil(filteredMessages.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedMessages = filteredMessages.slice(
-    startIndex,
-    startIndex + pageSize
-  );
+  const paginatedMessages = messages;
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -401,7 +450,7 @@ export function OutboxTable() {
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value={null}>All Statuses</SelectItem>
               <SelectItem value="transmitting">Transmitting</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="sent">Sent</SelectItem>
@@ -412,15 +461,15 @@ export function OutboxTable() {
               <SelectValue placeholder="Filter by partner" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Partners</SelectItem>
-              {uniquePartners.map((partner) => (
-                <SelectItem key={partner} value={partner}>
-                  {partner}
+              <SelectItem value={null}>All Partners</SelectItem>
+              {partners?.map((partner) => (
+                <SelectItem key={partner?.id} value={partner}>
+                  {partner?.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          {/* <Select value={priorityFilter} onValueChange={setPriorityFilter}>
             <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="Priority" />
             </SelectTrigger>
@@ -429,7 +478,7 @@ export function OutboxTable() {
               <SelectItem value="normal">Normal</SelectItem>
               <SelectItem value="urgent">Urgent</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
 
         {/* Table */}
@@ -606,20 +655,24 @@ export function OutboxTable() {
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-muted-foreground">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(startIndex + pageSize, filteredMessages.length)} of{" "}
-              {filteredMessages.length} messages
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, totalMessages)} of{" "}
+              {totalMessages} messages
             </p>
           </div>
           <div className="flex items-center space-x-2">
             <Select
               value={pageSize.toString()}
-              onValueChange={(value) => setPageSize(Number(value))}
+              onValueChange={(value) => {
+                setPageSize(Number(value));
+                setCurrentPage(1);
+              }}
             >
               <SelectTrigger className="w-[70px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>

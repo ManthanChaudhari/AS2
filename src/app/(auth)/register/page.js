@@ -88,6 +88,7 @@ export default function RegisterPage() {
   const [verificationSent, setVerificationSent] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const router = useRouter();
+  const [registrating , setRegistrating] = useState(false);
 
   // Use the authentication hook
   const { register, isLoading, error: authError, clearError, isAuthenticated } = useAuth();
@@ -164,6 +165,7 @@ export default function RegisterPage() {
 
     try {
       if (currentStep === 2) {
+        setRegistrating(true)
         // Collect all form data for registration
         const step1Data = step1Form.getValues();
         const registrationData = {
@@ -190,21 +192,21 @@ export default function RegisterPage() {
           return;
         }
 
-        // Registration successful, show verification step
         setVerificationSent(true);
         console.log("Registration successful, verification email sent");
+        setRegistrating(false);
         router.push("/login")
-      }
-
-      if (currentStep === 4) {
-        // Complete registration process
-        setRegistrationComplete(true);
-        console.log("Registration completed successfully");
         return;
       }
 
+      // if (currentStep === 4) {
+      //   setRegistrationComplete(true);
+      //   console.log("Registration completed successfully");
+      //   return;
+      // }
+
       // Move to next step
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep((prev) => prev + 1)
     } catch (err) {
       setLocalError(err.message || "An error occurred. Please try again.");
     }
@@ -650,8 +652,8 @@ export default function RegisterPage() {
             Back
           </Button>
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={registrating}>
+            {registrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {currentStep === 4 ? "Complete Registration" : "Continue"}
             {currentStep < 4 && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>

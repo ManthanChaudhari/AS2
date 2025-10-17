@@ -28,7 +28,8 @@ const ApiEndPoints = {
     GET_HISTORY : `${BASE_URL}/api/transmit/history`,
     GET_SIGNED_URL : `${BASE_URL}/api/transmit/download`,
     RETRY : `${BASE_URL}/api/transmit/retry`,
-    STATUS : `${BASE_URL}/api/transmit/status`
+    STATUS : `${BASE_URL}/api/transmit/status`,
+    DOWNLOAD_URL : `${BASE_URL}/api/transmit/artifacts`
   },
   
   // Legacy endpoint for backward compatibility

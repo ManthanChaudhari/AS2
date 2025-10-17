@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     if (!isInitialized) {
       initializeAuth();
     }
-  }, [auth.isAuthenticated, auth.isLoading, isInitialized]); // Remove auth.restoreSession from dependencies
+  }, [auth.isAuthenticated, auth.isLoading, isInitialized]);
 
   // Debug: Log authentication state changes in development
   useEffect(() => {

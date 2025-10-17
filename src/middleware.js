@@ -19,7 +19,8 @@ export function middleware(request) {
 
   // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !isAuthenticated) {
-    return NextResponse.redirect("/login");
+     const loginUrl = new URL("/login", request.url); 
+    return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users from auth routes to dashboard

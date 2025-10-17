@@ -136,10 +136,10 @@ function MessageActions({ message }) {
     // In real app: navigate to message detail page
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (type) => {
     try {
       const res = await ApiService.get(
-        `${ApiEndPoints?.AS2_TRANSMISSION?.DOWNLOAD_URL}/${message?.message_id}/download?artifact_type=status`
+        `${ApiEndPoints?.AS2_TRANSMISSION?.DOWNLOAD_URL}/${message?.message_id}/download?artifact_type=${type}`
       );
 
       const { download_url } = res?.data || {};
@@ -173,9 +173,17 @@ function MessageActions({ message }) {
           <Eye className="mr-2 h-4 w-4" />
           View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDownload}>
+        <DropdownMenuItem onClick={() => handleDownload("original")}>
           <Download className="mr-2 h-4 w-4" />
-          Download File
+          Download Original File
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleDownload("mdn")}>
+          <Download className="mr-2 h-4 w-4" />
+          Download MDN File
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleDownload("status")}>
+          <Download className="mr-2 h-4 w-4" />
+          Download Status File
         </DropdownMenuItem>
         {(message.status === "failed" || message.status === "mdn_timeout") && (
           <>

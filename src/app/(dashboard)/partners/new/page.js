@@ -1,16 +1,16 @@
 'use client'
 
-import React,{ useState } from 'react'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { 
   Building2, 
   Settings, 
   Shield, 
-  Mail, 
-  TestTube,
+  Mail,
   CheckCircle, 
   Loader2,
   ArrowLeft,
@@ -31,6 +31,8 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import ApiService from '@/lib/ApiServiceFunctions'
+import { transformCreatePartnerData } from '@/lib/partnerDataTransform'
 
 // Step schemas
 const step1Schema = z.object({
@@ -91,11 +93,14 @@ const signingAlgorithms = [
 ]
 
 export default function AddPartnerPage() {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [testResults, setTestResults] = useState(null)
   const [partnerCreated, setPartnerCreated] = useState(false)
+  const [createdPartnerId, setCreatedPartnerId] = useState(null)
+  const [encryptionCertFile, setEncryptionCertFile] = useState(null)
+  const [signingCertFile, setSigningCertFile] = useState(null)
 
   // Forms for each step
   const step1Form = useForm({
@@ -147,8 +152,7 @@ export default function AddPartnerPage() {
     { number: 1, title: 'Basic Information', icon: Building2, form: step1Form },
     { number: 2, title: 'AS2 Configuration', icon: Settings, form: step2Form },
     { number: 3, title: 'Certificate Upload', icon: Shield, form: step3Form },
-    { number: 4, title: 'MDN Settings', icon: Mail, form: step4Form },
-    { number: 5, title: 'Testing', icon: TestTube, form: null }
+    { number: 4, title: 'MDN Settings', icon: Mail, form: step4Form }
   ]
 
   const currentForm = steps[currentStep - 1]?.form
@@ -158,12 +162,9 @@ export default function AddPartnerPage() {
     setError('')
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      if (currentStep === 5) {
-        // Run connection test
-        await runConnectionTest()
+      if (currentStep === 4) {
+        // Final step - create the partner
+        await createPartner()
         return
       }
 
@@ -177,43 +178,89 @@ export default function AddPartnerPage() {
     }
   }
 
-  const runConnectionTest = async () => {
-    setTestResults(null)
-    
-    // Simulate test steps
-    const testSteps = [
-      { step: 'Loading test file...', delay: 500 },
-      { step: 'Encrypting with partner certificate...', delay: 800 },
-      { step: 'Signing with private key...', delay: 600 },
-      { step: 'Sending to partner endpoint...', delay: 1200 },
-      { step: 'HTTP 200 OK received', delay: 400 },
-      { step: 'MDN received (synchronous)', delay: 600 },
-      { step: 'Verifying MDN signature...', delay: 500 },
-      { step: 'Comparing MIC values...', delay: 400 },
-      { step: '✅ TEST PASSED - All checks successful!', delay: 200 }
-    ]
+  const createPartner = async () => {
+    try {
+      // Collect all form data
+      const step1Data = step1Form.getValues()
+      const step2Data = step2Form.getValues()
+      const step3Data = step3Form.getValues()
+      const step4Data = step4Form.getValues()
 
-    for (const testStep of testSteps) {
-      await new Promise(resolve => setTimeout(resolve, testStep.delay))
-      setTestResults(prev => [...(prev || []), testStep.step])
+      // Validate that certificates are uploaded
+      if (!encryptionCertFile) {
+        setError('Encryption certificate is required')
+        setCurrentStep(3)
+        return
+      }
+
+      if (!step3Data.useSameCert && !signingCertFile) {
+        setError('Signing certificate is required')
+        setCurrentStep(3)
+        return
+      }
+
+      // Combine all form data
+      const formData = {
+        ...step1Data,
+        ...step2Data,
+        ...step4Data,
+        encryptionCert: encryptionCertFile,
+        signingCert: step3Data.useSameCert ? encryptionCertFile : signingCertFile
+      }
+
+      // Transform to API format
+      const apiFormData = transformCreatePartnerData(formData)
+
+      // Call API to create partner
+      const response = await ApiService.createPartner(apiFormData)
+
+      if (response.error) {
+        // Handle validation errors
+        if (response.error.status === 422) {
+          setError('Please check your input data and try again.')
+        } else {
+          setError(response.error.message || 'Failed to create partner')
+        }
+        return
+      }
+
+      // Success - partner created
+      setCreatedPartnerId(response.data.id)
+      setPartnerCreated(true)
+
+    } catch (err) {
+      setError(err.message || 'Failed to create partner. Please try again.')
+    }
+  }
+
+  const handleCertificateUpload = (file, type) => {
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['.pem', '.crt', '.cer']
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase()
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      setError(`Invalid file type. Please upload a ${allowedTypes.join(', ')} file.`)
+      return
     }
 
-    // Show final results
-    setTimeout(() => {
-      setTestResults(prev => [
-        ...prev,
-        '',
-        'Test Results Summary:',
-        '✅ Connection Status: Success',
-        '✅ Response Time: 2.3 seconds',
-        '✅ Encryption: AES-256 successful',
-        '✅ Signing: SHA-256 successful',
-        '✅ MDN Received: Yes (Synchronous)',
-        '✅ MDN Signature: Verified',
-        '✅ MIC Match: Matched'
-      ])
-      setPartnerCreated(true)
-    }, 1000)
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      setError('File size too large. Please upload a file smaller than 5MB.')
+      return
+    }
+
+    // Clear any previous errors
+    setError('')
+
+    // Set the file
+    if (type === 'encryption') {
+      setEncryptionCertFile(file)
+    } else if (type === 'signing') {
+      setSigningCertFile(file)
+    }
   }
 
   const goBack = () => {
@@ -222,9 +269,12 @@ export default function AddPartnerPage() {
     }
   }
 
-  const activatePartner = () => {
-    console.log('Activating partner...')
-    // In real app: activate partner and redirect
+  const viewPartner = () => {
+    if (createdPartnerId) {
+      router.push(`/partners/${createdPartnerId}`)
+    } else {
+      router.push('/partners')
+    }
   }
 
   if (partnerCreated) {
@@ -239,7 +289,7 @@ export default function AddPartnerPage() {
               Partner Created Successfully!
             </CardTitle>
             <CardDescription>
-              Connection test passed. Your partner is ready to be activated.
+              Your partner has been created and is ready for use.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -250,14 +300,14 @@ export default function AddPartnerPage() {
               <ul className="text-sm text-green-700 dark:text-green-300 space-y-1 text-left">
                 <li>• Partner configuration has been saved</li>
                 <li>• Certificates have been validated and stored</li>
-                <li>• Connection test completed successfully</li>
-                <li>• Partner is ready for activation</li>
+                <li>• Partner is ready for AS2 communication</li>
+                <li>• You can now view and manage the partner</li>
               </ul>
             </div>
 
             <div className="flex justify-center space-x-4 pt-4">
-              <Button onClick={activatePartner}>
-                Activate Partner
+              <Button onClick={viewPartner}>
+                View Partner Details
               </Button>
               <Button variant="outline" asChild>
                 <Link href="/partners">
@@ -299,7 +349,7 @@ export default function AddPartnerPage() {
               </div>
               <div>
                 <CardTitle className="text-xl">
-                  Step {currentStep} of 5: {steps[currentStep - 1].title}
+                  Step {currentStep} of 4: {steps[currentStep - 1].title}
                 </CardTitle>
                 <CardDescription>
                   Complete all steps to add your trading partner
@@ -310,7 +360,7 @@ export default function AddPartnerPage() {
 
           {/* Progress bar */}
           <div className="space-y-2">
-            <Progress value={(currentStep / 5) * 100} className="w-full" />
+            <Progress value={(currentStep / 4) * 100} className="w-full" />
             <div className="flex justify-between text-xs text-muted-foreground">
               {steps.map((step) => (
                 <span 
@@ -560,6 +610,12 @@ export default function AddPartnerPage() {
                     id="useSameCert"
                     {...step3Form.register('useSameCert')}
                     disabled={isLoading}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        // Clear signing certificate when using same cert
+                        setSigningCertFile(null)
+                      }
+                    }}
                   />
                   <Label htmlFor="useSameCert">Use same certificate for encryption and signing</Label>
                 </div>
@@ -567,17 +623,53 @@ export default function AddPartnerPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Partner's Encryption Certificate *</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                    <div 
+                      className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors"
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.add('border-primary')
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.remove('border-primary')
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.remove('border-primary')
+                        const files = e.dataTransfer.files
+                        if (files.length > 0) {
+                          handleCertificateUpload(files[0], 'encryption')
+                        }
+                      }}
+                    >
                       <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground mb-2">
-                        Drag and drop certificate file here, or click to browse
+                        {encryptionCertFile ? (
+                          <span className="text-green-600 font-medium">{encryptionCertFile.name}</span>
+                        ) : (
+                          'Drag and drop certificate file here, or click to browse'
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Accepts .pem, .crt, .cer files
+                        Accepts .pem, .crt, .cer files (max 5MB)
                       </p>
-                      <Button variant="outline" className="mt-2" disabled={isLoading}>
+                      <input
+                        type="file"
+                        accept=".pem,.crt,.cer"
+                        onChange={(e) => handleCertificateUpload(e.target.files[0], 'encryption')}
+                        className="hidden"
+                        id="encryption-cert-upload"
+                        disabled={isLoading}
+                      />
+                      <Button 
+                        variant="outline" 
+                        type = "button"
+                        className="mt-2" 
+                        disabled={isLoading}
+                        onClick={() => document.getElementById('encryption-cert-upload').click()}
+                      >
                         <FileText className="mr-2 h-4 w-4" />
-                        Browse Files
+                        {encryptionCertFile ? 'Change File' : 'Browse Files'}
                       </Button>
                     </div>
                   </div>
@@ -585,14 +677,53 @@ export default function AddPartnerPage() {
                   {!step3Form.watch('useSameCert') && (
                     <div className="space-y-2">
                       <Label>Partner's Signing Certificate *</Label>
-                      <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                      <div 
+                        className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors"
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.add('border-primary')
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('border-primary')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('border-primary')
+                          const files = e.dataTransfer.files
+                          if (files.length > 0) {
+                            handleCertificateUpload(files[0], 'signing')
+                          }
+                        }}
+                      >
                         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground mb-2">
-                          Drag and drop certificate file here, or click to browse
+                          {signingCertFile ? (
+                            <span className="text-green-600 font-medium">{signingCertFile.name}</span>
+                          ) : (
+                            'Drag and drop certificate file here, or click to browse'
+                          )}
                         </p>
-                        <Button variant="outline" className="mt-2" disabled={isLoading}>
+                        <p className="text-xs text-muted-foreground">
+                          Accepts .pem, .crt, .cer files (max 5MB)
+                        </p>
+                        <input
+                          type="file"
+                          accept=".pem,.crt,.cer"
+                          onChange={(e) => handleCertificateUpload(e.target.files[0], 'signing')}
+                          className="hidden"
+                          id="signing-cert-upload"
+                          disabled={isLoading}
+                        />
+                        <Button 
+                          variant="outline" 
+                        type = "button"
+                          className="mt-2" 
+                          disabled={isLoading}
+                          onClick={() => document.getElementById('signing-cert-upload').click()}
+                        >
                           <FileText className="mr-2 h-4 w-4" />
-                          Browse Files
+                          {signingCertFile ? 'Change File' : 'Browse Files'}
                         </Button>
                       </div>
                     </div>

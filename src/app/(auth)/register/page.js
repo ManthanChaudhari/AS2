@@ -1,11 +1,13 @@
 "use client";
 
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import ErrorHandler from "@/lib/errorHandler";
 import {
   Building2,
   User,
@@ -42,16 +44,17 @@ import { Textarea } from "@/components/ui/textarea";
 // Step schemas
 const step1Schema = z.object({
   companyName: z.string().min(2, "Company name must be at least 2 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  country: z.string().min(1, "Please select a country"),
-  industryType: z.string().min(1, "Please select an industry type"),
+  domain: z.string().min(3, "Domain must be at least 3 characters").regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Please enter a valid domain"),
+  as2Identifier: z.string().min(3, "AS2 identifier must be at least 3 characters"),
+  contactEmail: z.string().email("Please enter a valid contact email"),
+  contactPhone: z.string().optional(),
+  address: z.string().optional(),
 });
 
 const step2Schema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
+  adminEmail: z.string().email('Please enter a valid admin email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(
@@ -78,41 +81,32 @@ const step4Schema = z.object({
   signature: z.string().min(2, 'Please provide your digital signature'),
 });
 
-// Dummy data
-const countries = [
-  { value: "us", label: "United States" },
-  { value: "ca", label: "Canada" },
-  { value: "uk", label: "United Kingdom" },
-  { value: "de", label: "Germany" },
-  { value: "fr", label: "France" },
-  { value: "jp", label: "Japan" },
-  { value: "au", label: "Australia" },
-];
 
-const industryTypes = [
-  { value: "pharmaceutical", label: "Pharmaceutical Company" },
-  { value: "biotech", label: "Biotechnology" },
-  { value: "cro", label: "Contract Research Organization" },
-  { value: "regulatory", label: "Regulatory Consulting" },
-  { value: "other", label: "Other" },
-];
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [verificationSent, setVerificationSent] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const router = useRouter();
+  const [registrating , setRegistrating] = useState(false);
+
+  // Use the authentication hook
+  const { register, isLoading, error: authError, clearError, isAuthenticated } = useAuth();
+  const [localError, setLocalError] = useState("");
+
+  // Combined error from auth hook and local state
+  const error = authError || localError;
 
   // Forms for each step
   const step1Form = useForm({
     resolver: zodResolver(step1Schema),
     defaultValues: {
       companyName: "",
+      domain: "",
+      as2Identifier: "",
+      contactEmail: "",
+      contactPhone: "",
       address: "",
-      city: "",
-      country: "",
-      industryType: "",
     },
   });
 
@@ -121,7 +115,7 @@ export default function RegisterPage() {
     defaultValues: {
       firstName: "",
       lastName: "",
-      email: "",
+      adminEmail: "",
       password: "",
       confirmPassword: "",
     },
@@ -146,39 +140,75 @@ export default function RegisterPage() {
   const steps = [
     { number: 1, title: "Company Details", icon: Building2, form: step1Form },
     { number: 2, title: "Admin User", icon: User, form: step2Form },
-    { number: 3, title: "Email Verification", icon: Mail, form: step3Form },
-    { number: 4, title: "Terms & Signature", icon: FileCheck, form: step4Form },
+    // { number: 3, title: "Email Verification", icon: Mail, form: step3Form },
+    // { number: 4, title: "Terms & Signature", icon: FileCheck, form: step4Form },
   ];
 
   const currentForm = steps[currentStep - 1].form;
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearError();
+    setLocalError("");
+  }, [clearError]);
+
   const onStepSubmit = async (data) => {
-    setIsLoading(true);
-    setError("");
+    setLocalError("");
+    clearError();
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       if (currentStep === 2) {
-        // Send verification email
-        setVerificationSent(true);
-        console.log("Verification email sent to:", data.email);
-      }
+        setRegistrating(true)
+        // Collect all form data for registration
+        const step1Data = step1Form.getValues();
+        const registrationData = {
+          // Required fields according to API
+          company_name: step1Data.companyName,
+          domain: step1Data.domain,
+          as2_identifier: step1Data.as2Identifier,
+          contact_email: step1Data.contactEmail,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          admin_email: data.adminEmail,
+          password: data.password,
+          // Optional fields
+          contact_phone: step1Data.contactPhone || null,
+          address: step1Data.address || null
+        };
 
-      if (currentStep === 4) {
-        // Complete registration
-        setRegistrationComplete(true);
-        console.log("Registration completed successfully");
+        console.log("Registration data being sent:", registrationData);
+        const result = await register(registrationData);
+
+        if (result.error) {
+          console.error("Registration error:", result.error);
+          setLocalError(ErrorHandler.getUserMessage(result));
+          return;
+        }
+
+        setVerificationSent(true);
+        console.log("Registration successful, verification email sent");
+        setRegistrating(false);
+        router.push("/login")
         return;
       }
 
+      // if (currentStep === 4) {
+      //   setRegistrationComplete(true);
+      //   console.log("Registration completed successfully");
+      //   return;
+      // }
+
       // Move to next step
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep((prev) => prev + 1)
     } catch (err) {
-      setError(err.message || "An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setLocalError(err.message || "An error occurred. Please try again.");
     }
   };
 
@@ -189,15 +219,14 @@ export default function RegisterPage() {
   };
 
   const resendVerification = async () => {
-    setIsLoading(true);
+    setLocalError("");
     try {
+      // In a real app, this would call an API to resend verification
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Verification code resent");
       setVerificationSent(true);
     } catch (err) {
-      setError("Failed to resend verification code");
-    } finally {
-      setIsLoading(false);
+      setLocalError("Failed to resend verification code");
     }
   };
 
@@ -305,85 +334,80 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address *</Label>
+                  <Label htmlFor="domain">Company Domain *</Label>
+                  <Input
+                    id="domain"
+                    placeholder="acmepharma.com"
+                    {...step1Form.register("domain")}
+                    disabled={isLoading}
+                  />
+                  {step1Form.formState.errors.domain && (
+                    <p className="text-sm text-red-600">
+                      {step1Form.formState.errors.domain.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="as2Identifier">AS2 Identifier *</Label>
+                  <Input
+                    id="as2Identifier"
+                    placeholder="ACME_PHARMA_AS2"
+                    {...step1Form.register("as2Identifier")}
+                    disabled={isLoading}
+                  />
+                  {step1Form.formState.errors.as2Identifier && (
+                    <p className="text-sm text-red-600">
+                      {step1Form.formState.errors.as2Identifier.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Unique identifier for AS2 communications
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email *</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    placeholder="contact@acmepharma.com"
+                    {...step1Form.register("contactEmail")}
+                    disabled={isLoading}
+                  />
+                  {step1Form.formState.errors.contactEmail && (
+                    <p className="text-sm text-red-600">
+                      {step1Form.formState.errors.contactEmail.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Contact Phone (Optional)</Label>
+                  <Input
+                    id="contactPhone"
+                    placeholder="+1 (555) 123-4567"
+                    {...step1Form.register("contactPhone")}
+                    disabled={isLoading}
+                  />
+                  {step1Form.formState.errors.contactPhone && (
+                    <p className="text-sm text-red-600">
+                      {step1Form.formState.errors.contactPhone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address (Optional)</Label>
                   <Textarea
                     id="address"
-                    placeholder="123 Main Street, Suite 100"
+                    placeholder="123 Main Street, Suite 100, New York, NY 10001"
                     {...step1Form.register("address")}
                     disabled={isLoading}
                   />
                   {step1Form.formState.errors.address && (
                     <p className="text-sm text-red-600">
                       {step1Form.formState.errors.address.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      placeholder="New York"
-                      {...step1Form.register("city")}
-                      disabled={isLoading}
-                    />
-                    {step1Form.formState.errors.city && (
-                      <p className="text-sm text-red-600">
-                        {step1Form.formState.errors.city.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country *</Label>
-                    <Select
-                      onValueChange={(value) =>
-                        step1Form.setValue("country", value)
-                      }
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.value} value={country.value}>
-                            {country.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {step1Form.formState.errors.country && (
-                      <p className="text-sm text-red-600">
-                        {step1Form.formState.errors.country.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="industryType">Industry Type *</Label>
-                  <Select
-                    onValueChange={(value) =>
-                      step1Form.setValue("industryType", value)
-                    }
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select industry type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industryTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {step1Form.formState.errors.industryType && (
-                    <p className="text-sm text-red-600">
-                      {step1Form.formState.errors.industryType.message}
                     </p>
                   )}
                 </div>
@@ -427,19 +451,22 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
+                <Label htmlFor="adminEmail">Admin Email Address *</Label>
                 <Input
-                  id="email"
+                  id="adminEmail"
                   type="email"
                   placeholder="john.doe@company.com"
-                  {...step2Form.register("email")}
+                  {...step2Form.register("adminEmail")}
                   disabled={isLoading}
                 />
-                {step2Form.formState.errors.email && (
+                {step2Form.formState.errors.adminEmail && (
                   <p className="text-sm text-red-600">
-                    {step2Form.formState.errors.email.message}
+                    {step2Form.formState.errors.adminEmail.message}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  This will be your login email address
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -625,8 +652,8 @@ export default function RegisterPage() {
             Back
           </Button>
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={registrating}>
+            {registrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {currentStep === 4 ? "Complete Registration" : "Continue"}
             {currentStep < 4 && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>

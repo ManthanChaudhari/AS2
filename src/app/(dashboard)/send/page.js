@@ -1,219 +1,221 @@
-'use client'
-
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { 
-  Upload, 
-  FileText, 
-  Send, 
-  CheckCircle, 
-  AlertTriangle,
-  ArrowRight,
+"use client"
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useForm } from "react-hook-form";
+import {
+  Upload,
+  FileText,
+  X,
+  CheckCircle,
   ArrowLeft,
+  ArrowRight,
+  Send,
   Loader2,
-  X
-} from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-
-// Validation schema
-const sendFileSchema = z.object({
-  partnerId: z.string().min(1, 'Please select a partner'),
-  file: z.any().refine((file) => file && file.size > 0, 'Please select a file'),
-  subject: z.string().min(1, 'Subject is required'),
-  priority: z.enum(['normal', 'urgent']),
-  notes: z.string().optional()
-})
-
-// Dummy partners data
-const partnersData = [
-  {
-    id: '1',
-    name: 'FDA FAERS',
-    as2Id: 'FDA-FAERS-001',
-    organizationType: 'regulatory',
-    status: 'active',
-    certificateStatus: 'valid'
-  },
-  {
-    id: '2',
-    name: 'EMA EudraVigilance',
-    as2Id: 'EMA-EV-002',
-    organizationType: 'regulatory',
-    status: 'active',
-    certificateStatus: 'valid'
-  },
-  {
-    id: '3',
-    name: 'Health Canada',
-    as2Id: 'HC-CANADA-001',
-    organizationType: 'regulatory',
-    status: 'active',
-    certificateStatus: 'valid'
-  },
-  {
-    id: '4',
-    name: 'Pfizer Inc.',
-    as2Id: 'PFIZER-001',
-    organizationType: 'mah',
-    status: 'active',
-    certificateStatus: 'expiring'
-  }
-]
+  AlertTriangle,
+} from "lucide-react";
+import ApiService from "@/lib/ApiServiceFunctions";
+import { transformPartnersResponse } from "@/lib/partnerDataTransform";
+import ApiEndPoints from "@/lib/ApiServiceEndpoint";
 
 const steps = [
-  { number: 1, title: 'Select Partner', description: 'Choose the recipient' },
-  { number: 2, title: 'Upload File', description: 'Select file to send' },
-  { number: 3, title: 'Configure Message', description: 'Set message details' },
-  { number: 4, title: 'Review & Send', description: 'Confirm and send' },
-  { number: 5, title: 'Confirmation', description: 'Send complete' }
-]
+  { number: 1, title: "Partner", description: "Select trading partner" },
+  { number: 2, title: "Upload", description: "Upload file" },
+  { number: 3, title: "Configure", description: "Set message details" },
+  { number: 4, title: "Review", description: "Review and confirm" },
+  { number: 5, title: "Complete", description: "Transmission complete" },
+];
 
 export default function SendFilePage() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [selectedPartner, setSelectedPartner] = useState(null)
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [fileMetadata, setFileMetadata] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [sendResult, setSendResult] = useState(null)
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [fileMetadata, setFileMetadata] = useState(null);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
+  const [partnersData , setPartnerData] = useState([])
 
-  const form = useForm({
-    resolver: zodResolver(sendFileSchema),
-    defaultValues: {
-      partnerId: '',
-      subject: '',
-      priority: 'normal',
-      notes: ''
+  const fetchPartners = async () => {
+    try {
+      // Fetch all partners (with a large page size to get all)
+      const response = await ApiService.getPartners();
+
+      if (response.error) {
+        console.error("Failed to fetch partner stats:", response.error);
+      } else {
+        const transformedPartners = transformPartnersResponse(
+          response.data.items || response.data.data || []
+        );
+        setPartnerData(transformedPartners);
+      }
+    } catch (err) {
+      console.error("Error fetching partner stats:", err);
     }
-  })
+  };
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  // React Hook Form
+  const form = useForm({
+    defaultValues: {
+      subject: "",
+      priority: "normal",
+      notes: "",
+    },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+  } = form;
 
   const handlePartnerSelect = (partnerId) => {
-    const partner = partnersData.find(p => p.id === partnerId)
-    setSelectedPartner(partner)
-    form.setValue('partnerId', partnerId)
-    
-    // Auto-generate subject based on partner
-    const defaultSubject = `ICSR Submission - {filename} - ${new Date().toISOString().split('T')[0]}`
-    form.setValue('subject', defaultSubject)
-  }
+    const partner = partnersData.find((p) => p.id === partnerId);
+    setSelectedPartner(partner);
+    setError("");
+  };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0]
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
     if (file) {
-      // Validate file
-      if (!file.name.endsWith('.xml')) {
-        setError('Only XML files are allowed')
-        return
-      }
-      if (file.size > 100 * 1024 * 1024) { // 100MB
-        setError('File size must be less than 100MB')
-        return
-      }
-
-      setUploadedFile(file)
-      form.setValue('file', file)
-      setError('')
-
-      // Extract metadata (dummy)
-      setFileMetadata({
-        filename: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: new Date(file.lastModified),
-        // Dummy E2B metadata
-        senderId: 'ACME-PHARMA-001',
-        messageNumber: 'MSG-' + Date.now(),
-        caseIds: ['CASE-2024-001', 'CASE-2024-002'],
-        transmissionDate: new Date().toISOString()
-      })
-
-      // Update subject with actual filename
-      const currentSubject = form.getValues('subject')
-      const updatedSubject = currentSubject.replace('{filename}', file.name)
-      form.setValue('subject', updatedSubject)
+      processFile(file);
     }
-  }
+  };
 
-  const handleFileDrop = (event) => {
-    event.preventDefault()
-    const file = event.dataTransfer.files[0]
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
     if (file) {
-      const fakeEvent = { target: { files: [file] } }
-      handleFileUpload(fakeEvent)
+      processFile(file);
     }
-  }
+  };
 
-  const handleDragOver = (event) => {
-    event.preventDefault()
-  }
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const processFile = (file) => {
+    if (!file.name.endsWith(".xml")) {
+      setError("Please upload an XML file");
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      setError("File size exceeds 100MB limit");
+      return;
+    }
+
+    setUploadedFile(file);
+    setError("");
+
+    // Simulate extracting metadata from XML
+    setFileMetadata({
+      senderId:
+        "SENDER_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      messageNumber: "MSG_" + Math.floor(Math.random() * 100000),
+      caseIds: ["CASE001", "CASE002"],
+      transmissionDate: new Date().toISOString(),
+    });
+  };
 
   const removeFile = () => {
-    setUploadedFile(null)
-    setFileMetadata(null)
-    form.setValue('file', null)
-    setError('')
-  }
-
-  const nextStep = () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
-  const onSubmit = async (data) => {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      // Simulate file sending
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simulate success
-      setSendResult({
-        messageId: 'MSG-20241013-' + Date.now(),
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-        awaitingMdn: true,
-        partner: selectedPartner.name,
-        filename: uploadedFile.name
-      })
-
-      nextStep() // Go to confirmation step
-    } catch (err) {
-      setError(err.message || 'Failed to send file. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    setUploadedFile(null);
+    setFileMetadata(null);
+  };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  const validateStep = (step) => {
+    switch (step) {
+      case 1:
+        if (!selectedPartner) {
+          setError("Please select a partner");
+          return false;
+        }
+        break;
+      case 2:
+        if (!uploadedFile) {
+          setError("Please upload a file");
+          return false;
+        }
+        break;
+      case 3:
+        if (!watch("subject")?.trim()) {
+          setError("Subject is required");
+          return false;
+        }
+        break;
+    }
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
+      setError("");
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setError("");
+  };
+
+ const onSubmit = handleSubmit(async (data) => {
+    
+    const formData = new FormData();
+    
+    formData.append('partner_id', selectedPartner.id);
+    formData.append('subject', data.subject);
+    
+    if (uploadedFile) {
+      formData.append('file', uploadedFile);
+    }
+    
+    // Simulate sending with fetch
+    setIsLoading(true);
+
+    const res = await ApiService.post(`${ApiEndPoints.AS2_TRANSMISSION.CREATE}` , formData);
+    
+    // Simulate API response
+    setTimeout(() => {
+      const result = {
+        messageId: 'MSG_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+        partner: selectedPartner.name,
+        sentAt: new Date().toISOString(),
+        status: 'sent'
+      };
+      
+      setSendResult(result);
+      setIsLoading(false);
+      setCurrentStep(5);
+      
+      console.log('=== SEND RESULT ===');
+      console.log(result);
+      console.log('===================');
+    }, 2000);
+  });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Send File</h1>
@@ -226,7 +228,9 @@ export default function SendFilePage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle>Step {currentStep} of 5: {steps[currentStep - 1].title}</CardTitle>
+            <CardTitle>
+              Step {currentStep} of 5: {steps[currentStep - 1].title}
+            </CardTitle>
             <div className="text-sm text-muted-foreground">
               {steps[currentStep - 1].description}
             </div>
@@ -234,9 +238,11 @@ export default function SendFilePage() {
           <Progress value={(currentStep / 5) * 100} className="w-full" />
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             {steps.map((step) => (
-              <span 
+              <span
                 key={step.number}
-                className={currentStep >= step.number ? 'text-primary' : ''}
+                className={
+                  currentStep >= step.number ? "text-primary font-medium" : ""
+                }
               >
                 {step.title}
               </span>
@@ -266,19 +272,23 @@ export default function SendFilePage() {
                   <div
                     key={partner.id}
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedPartner?.id === partner.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'hover:border-primary/50'
+                      selectedPartner?.id === partner.id
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-primary/50"
                     }`}
                     onClick={() => handlePartnerSelect(partner.id)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium">{partner.name}</h3>
-                        <p className="text-sm text-muted-foreground">AS2 ID: {partner.as2Id}</p>
+                        <p className="text-sm text-muted-foreground">
+                          AS2 ID: {partner.as2Id}
+                        </p>
                         <div className="flex items-center space-x-2 mt-2">
                           <Badge variant="outline">
-                            {partner.organizationType === 'regulatory' ? 'Regulatory Agency' : 'MAH'}
+                            {partner.organizationType === "regulatory"
+                              ? "Regulatory Agency"
+                              : "MAH"}
                           </Badge>
                           <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                             {partner.status}
@@ -286,7 +296,7 @@ export default function SendFilePage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        {partner.certificateStatus === 'expiring' && (
+                        {partner.certificateStatus === "expiring" && (
                           <div className="flex items-center text-yellow-600 mb-2">
                             <AlertTriangle className="h-4 w-4 mr-1" />
                             <span className="text-xs">Cert Expiring</span>
@@ -320,7 +330,9 @@ export default function SendFilePage() {
                   onDragOver={handleDragOver}
                 >
                   <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Drop your file here</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    Drop your file here
+                  </h3>
                   <p className="text-muted-foreground mb-4">
                     or click to browse files
                   </p>
@@ -352,7 +364,8 @@ export default function SendFilePage() {
                           {formatFileSize(uploadedFile.size)} • XML File
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Modified: {new Date(uploadedFile.lastModified).toLocaleString()}
+                          Modified:{" "}
+                          {new Date(uploadedFile.lastModified).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -363,23 +376,43 @@ export default function SendFilePage() {
 
                   {fileMetadata && (
                     <div className="mt-4 p-3 bg-muted/50 rounded">
-                      <h4 className="font-medium text-sm mb-2">File Metadata</h4>
+                      <h4 className="font-medium text-sm mb-2">
+                        File Metadata
+                      </h4>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-muted-foreground">Sender ID:</span>
-                          <span className="ml-1 font-mono">{fileMetadata.senderId}</span>
+                          <span className="text-muted-foreground">
+                            Sender ID:
+                          </span>
+                          <span className="ml-1 font-mono">
+                            {fileMetadata.senderId}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Message Number:</span>
-                          <span className="ml-1 font-mono">{fileMetadata.messageNumber}</span>
+                          <span className="text-muted-foreground">
+                            Message Number:
+                          </span>
+                          <span className="ml-1 font-mono">
+                            {fileMetadata.messageNumber}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Case IDs:</span>
-                          <span className="ml-1">{fileMetadata.caseIds.join(', ')}</span>
+                          <span className="text-muted-foreground">
+                            Case IDs:
+                          </span>
+                          <span className="ml-1">
+                            {fileMetadata.caseIds.join(", ")}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Transmission Date:</span>
-                          <span className="ml-1">{new Date(fileMetadata.transmissionDate).toLocaleString()}</span>
+                          <span className="text-muted-foreground">
+                            Transmission Date:
+                          </span>
+                          <span className="ml-1">
+                            {new Date(
+                              fileMetadata.transmissionDate
+                            ).toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -393,7 +426,9 @@ export default function SendFilePage() {
           {currentStep === 3 && (
             <div className="space-y-4">
               <div>
-                <Label className="text-base font-medium">Configure Message</Label>
+                <Label className="text-base font-medium">
+                  Configure Message
+                </Label>
                 <p className="text-sm text-muted-foreground mb-4">
                   Set message details and delivery options
                 </p>
@@ -404,12 +439,18 @@ export default function SendFilePage() {
                   <Label htmlFor="subject">Message Subject *</Label>
                   <Input
                     id="subject"
-                    {...form.register('subject')}
+                    {...register("subject", {
+                      required: "Subject is required",
+                      minLength: {
+                        value: 3,
+                        message: "Subject must be at least 3 characters",
+                      },
+                    })}
                     placeholder="ICSR Submission - filename - date"
                   />
-                  {form.formState.errors.subject && (
+                  {errors.subject && (
                     <p className="text-sm text-red-600">
-                      {form.formState.errors.subject.message}
+                      {errors.subject.message}
                     </p>
                   )}
                 </div>
@@ -417,16 +458,26 @@ export default function SendFilePage() {
                 <div className="space-y-2">
                   <Label>Priority</Label>
                   <RadioGroup
-                    value={form.watch('priority')}
-                    onValueChange={(value) => form.setValue('priority', value)}
+                    value={watch("priority")}
+                    onValueChange={(value) => setValue("priority", value)}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="normal" id="normal" />
-                      <Label htmlFor="normal">Normal</Label>
+                      <Label
+                        htmlFor="normal"
+                        className="font-normal cursor-pointer"
+                      >
+                        Normal
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="urgent" id="urgent" />
-                      <Label htmlFor="urgent">Urgent</Label>
+                      <Label
+                        htmlFor="urgent"
+                        className="font-normal cursor-pointer"
+                      >
+                        Urgent
+                      </Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -435,7 +486,7 @@ export default function SendFilePage() {
                   <Label htmlFor="notes">Optional Message Notes</Label>
                   <Textarea
                     id="notes"
-                    {...form.register('notes')}
+                    {...register("notes")}
                     placeholder="Additional notes for this transmission..."
                     rows={3}
                   />
@@ -482,7 +533,9 @@ export default function SendFilePage() {
                   <div className="grid gap-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Partner:</span>
-                      <span className="font-medium">{selectedPartner?.name}</span>
+                      <span className="font-medium">
+                        {selectedPartner?.name}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">File:</span>
@@ -490,16 +543,26 @@ export default function SendFilePage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Size:</span>
-                      <span>{uploadedFile ? formatFileSize(uploadedFile.size) : 'N/A'}</span>
+                      <span>
+                        {uploadedFile
+                          ? formatFileSize(uploadedFile.size)
+                          : "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subject:</span>
-                      <span className="font-medium">{form.watch('subject')}</span>
+                      <span className="font-medium">{watch("subject")}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Priority:</span>
-                      <Badge variant={form.watch('priority') === 'urgent' ? 'destructive' : 'secondary'}>
-                        {form.watch('priority')}
+                      <Badge
+                        variant={
+                          watch("priority") === "urgent"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {watch("priority")}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
@@ -511,16 +574,20 @@ export default function SendFilePage() {
                       <span>SHA-256</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Estimated Send Time:</span>
+                      <span className="text-muted-foreground">
+                        Estimated Send Time:
+                      </span>
                       <span>~5 seconds</span>
                     </div>
                   </div>
                 </div>
 
-                {form.watch('notes') && (
+                {watch("notes") && (
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-medium mb-2">Message Notes</h4>
-                    <p className="text-sm text-muted-foreground">{form.watch('notes')}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {watch("notes")}
+                    </p>
                   </div>
                 )}
               </div>
@@ -566,10 +633,13 @@ export default function SendFilePage() {
               </div>
 
               <div className="flex justify-center space-x-4 pt-4">
-                <Button asChild>
-                  <a href="/outbox">View in Outbox</a>
+                <Button onClick={() => alert("Navigate to /outbox")}>
+                  View in Outbox
                 </Button>
-                <Button variant="outline" onClick={() => window.location.reload()}>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                >
                   Send Another File
                 </Button>
               </div>
@@ -595,7 +665,7 @@ export default function SendFilePage() {
                 disabled={
                   (currentStep === 1 && !selectedPartner) ||
                   (currentStep === 2 && !uploadedFile) ||
-                  (currentStep === 3 && !form.watch('subject'))
+                  (currentStep === 3 && !watch("subject"))
                 }
               >
                 Continue
@@ -603,7 +673,7 @@ export default function SendFilePage() {
               </Button>
             ) : (
               <Button
-                onClick={form.handleSubmit(onSubmit)}
+                onClick={onSubmit}
                 disabled={isLoading}
                 className="bg-green-600 hover:bg-green-700"
               >
@@ -616,5 +686,5 @@ export default function SendFilePage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

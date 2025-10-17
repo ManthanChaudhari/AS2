@@ -1,0 +1,5074 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "AS2 Pharmacovigilance Portal API",
+        "description": "\n    ## AS2 Pharmacovigilance Portal Backend API\n    \n    ### Features:\n    - 🔐 **Authentication & User Management**\n    - 👥 **Partner Management**\n    - 🔒 **Certificate Management**\n    - 📤 **File Transmission (Send)**\n    - 📥 **File Reception (Inbox)**\n    - ⚙️ **System Administration**\n    - 📊 **Reports & Analytics**\n    - 📋 **Audit Logs**\n    \n    ### Current Status:\n    - 🚧 **All Features**: Under Development\n    ",
+        "contact": {
+            "name": "AS2 Portal Support",
+            "email": "support@as2portal.com"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "summary": "Health check",
+                "description": "Check the health status of the AS2 Portal API",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Health Check Health Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/": {
+            "get": {
+                "tags": [
+                    "System",
+                    "System"
+                ],
+                "summary": "Api Root",
+                "description": "AS2 Portal API root endpoint",
+                "operationId": "api_root_api__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "System",
+                    "System"
+                ],
+                "summary": "Api Health Check",
+                "description": "AS2 Portal API health check",
+                "operationId": "api_health_check_api_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/dashboard/stats": {
+            "get": {
+                "tags": [
+                    "System",
+                    "Dashboard"
+                ],
+                "summary": "Get Dashboard Stats",
+                "description": "Get dashboard statistics",
+                "operationId": "get_dashboard_stats_api_dashboard_stats_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/dashboard/system-health": {
+            "get": {
+                "tags": [
+                    "System",
+                    "Dashboard"
+                ],
+                "summary": "Get System Health",
+                "description": "Get system health status",
+                "operationId": "get_system_health_api_dashboard_system_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register",
+                "description": "Register new organization and admin user\n4-step wizard: company details, admin creation, email verification, terms acceptance",
+                "operationId": "register_api_auth_register_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login",
+                "description": "Authenticate user and return JWT tokens\nSupports MFA if enabled",
+                "operationId": "login_api_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Refresh Token",
+                "description": "Refresh access token using refresh token",
+                "operationId": "refresh_token_api_auth_refresh_post",
+                "parameters": [
+                    {
+                        "name": "refresh_token",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Refresh Token"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get Current User Info",
+                "description": "Get current user information",
+                "operationId": "get_current_user_info_api_auth_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout",
+                "description": "Logout user (client should discard tokens)",
+                "operationId": "logout_api_auth_logout_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/partners/": {
+            "get": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Get Partners",
+                "description": "Get paginated list of partners with filtering",
+                "operationId": "get_partners_api_partners__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Search"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "organization_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Organization Type"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Create Partner",
+                "description": "Create a new trading partner with AWS Transfer Family integration",
+                "operationId": "create_partner_api_partners__post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_create_partner_api_partners__post"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartnerResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/partners/{partner_id}": {
+            "get": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Get Partner",
+                "description": "Get partner details by ID",
+                "operationId": "get_partner_api_partners__partner_id__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartnerResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Update Partner",
+                "description": "Update partner information and AWS Transfer Family resources",
+                "operationId": "update_partner_api_partners__partner_id__put",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/Body_update_partner_api_partners__partner_id__put"
+                                    }
+                                ],
+                                "title": "Body"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartnerResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Delete Partner",
+                "description": "Delete a partner and clean up all AWS Transfer Family resources",
+                "operationId": "delete_partner_api_partners__partner_id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/partners/certificates/expiring": {
+            "get": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Get Expiring Certificates",
+                "description": "Get partners with certificates expiring within the specified threshold",
+                "operationId": "get_expiring_certificates_api_partners_certificates_expiring_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "days_threshold",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 365,
+                            "minimum": 1,
+                            "description": "Days threshold for expiring certificates",
+                            "default": 30,
+                            "title": "Days Threshold"
+                        },
+                        "description": "Days threshold for expiring certificates"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/partners/{partner_id}/test": {
+            "post": {
+                "tags": [
+                    "Partner Management",
+                    "Partner Management"
+                ],
+                "summary": "Test Partner Connection",
+                "description": "Test connection to partner AS2 endpoint",
+                "operationId": "test_partner_connection_api_partners__partner_id__test_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/certificates/": {
+            "get": {
+                "tags": [
+                    "Certificate Management",
+                    "Certificate Management"
+                ],
+                "summary": "Get Certificates",
+                "description": "Get paginated list of certificates with filtering",
+                "operationId": "get_certificates_api_certificates__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "owner_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Owner Type"
+                        }
+                    },
+                    {
+                        "name": "certificate_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Certificate Type"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "expiring_soon",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": false,
+                            "title": "Expiring Soon"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Certificate Management",
+                    "Certificate Management"
+                ],
+                "summary": "Create Certificate",
+                "description": "Create a new certificate",
+                "operationId": "create_certificate_api_certificates__post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/certificates/{certificate_id}": {
+            "get": {
+                "tags": [
+                    "Certificate Management",
+                    "Certificate Management"
+                ],
+                "summary": "Get Certificate",
+                "description": "Get certificate details by ID",
+                "operationId": "get_certificate_api_certificates__certificate_id__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "certificate_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Certificate Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Certificate Management",
+                    "Certificate Management"
+                ],
+                "summary": "Delete Certificate",
+                "description": "Delete a certificate",
+                "operationId": "delete_certificate_api_certificates__certificate_id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "certificate_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Certificate Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/certificates/expiring/summary": {
+            "get": {
+                "tags": [
+                    "Certificate Management",
+                    "Certificate Management"
+                ],
+                "summary": "Get Expiring Certificates Summary",
+                "description": "Get summary of expiring certificates",
+                "operationId": "get_expiring_certificates_summary_api_certificates_expiring_summary_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/transmission/send": {
+            "post": {
+                "tags": [
+                    "File Transmission",
+                    "File Transmission"
+                ],
+                "summary": "Send File",
+                "description": "Send a file to a trading partner via AS2",
+                "operationId": "send_file_api_transmission_send_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_send_file_api_transmission_send_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/transmission/outbox": {
+            "get": {
+                "tags": [
+                    "File Transmission",
+                    "File Transmission"
+                ],
+                "summary": "Get Outbox",
+                "description": "Get paginated list of sent messages",
+                "operationId": "get_outbox_api_transmission_outbox_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "partner_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transmission/inbox": {
+            "get": {
+                "tags": [
+                    "File Transmission",
+                    "File Reception"
+                ],
+                "summary": "Get Inbox",
+                "description": "Get paginated list of received messages",
+                "operationId": "get_inbox_api_transmission_inbox_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "validation_status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Validation Status"
+                        }
+                    },
+                    {
+                        "name": "partner_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Partner Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transmission/{message_id}": {
+            "get": {
+                "tags": [
+                    "File Transmission",
+                    "File Transmission"
+                ],
+                "summary": "Get Message Details",
+                "description": "Get detailed message information",
+                "operationId": "get_message_details_api_transmission__message_id__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Message Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transmission/{message_id}/resend": {
+            "post": {
+                "tags": [
+                    "File Transmission",
+                    "File Transmission"
+                ],
+                "summary": "Resend Message",
+                "description": "Resend a failed message",
+                "operationId": "resend_message_api_transmission__message_id__resend_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Message Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transmission/{message_id}/revalidate": {
+            "post": {
+                "tags": [
+                    "File Transmission",
+                    "File Reception"
+                ],
+                "summary": "Revalidate Message",
+                "description": "Revalidate a received message",
+                "operationId": "revalidate_message_api_transmission__message_id__revalidate_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Message Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/upload": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Upload File",
+                "description": "Upload file to S3 bucket in tenant-specific folder\n\nArgs:\n    file: File to upload\n    bucket_name: Optional S3 bucket name (uses default if not provided)\n    folder_name: Optional subfolder name (e.g., 'certificates', 'messages', 'documents')\n    custom_filename: Optional custom filename\n    tenant_name: Optional custom tenant name (uses current user's tenant if not provided)\n\nReturns:\n    dict: Upload result with S3 URL",
+                "operationId": "upload_file_api_files_upload_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_file_api_files_upload_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FileUploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/upload-multiple": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Upload Multiple Files",
+                "description": "Upload multiple files to S3 bucket in tenant-specific folder\n\nArgs:\n    files: List of files to upload\n    bucket_name: Optional S3 bucket name (uses default if not provided)\n    folder_name: Optional subfolder name\n    tenant_name: Optional custom tenant name (uses current user's tenant if not provided)\n\nReturns:\n    dict: Upload results with S3 URLs",
+                "operationId": "upload_multiple_files_api_files_upload_multiple_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_multiple_files_api_files_upload_multiple_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MultipleFileUploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/buckets/check/{bucket_name}": {
+            "get": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Check Bucket Access",
+                "description": "Check if S3 bucket exists and is accessible\n\nArgs:\n    bucket_name: S3 bucket name to check\n\nReturns:\n    dict: Bucket accessibility status",
+                "operationId": "check_bucket_access_api_files_buckets_check__bucket_name__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "bucket_name",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Bucket Name"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Check Bucket Access Api Files Buckets Check  Bucket Name  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/presigned-url": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Get Presigned Url",
+                "description": "Generate presigned URL for accessing private S3 files\n\nArgs:\n    s3_key: S3 object key (path to file in bucket)\n    bucket_name: Optional S3 bucket name (uses default if not provided)\n    expiration: URL expiration time in seconds (default: 3600 = 1 hour)\n\nReturns:\n    dict: Presigned URL and metadata",
+                "operationId": "get_presigned_url_api_files_presigned_url_post",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_get_presigned_url_api_files_presigned_url_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PresignedUrlResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/config/aws": {
+            "get": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Get Aws Configuration",
+                "description": "Get AWS configuration information for debugging\n\nReturns:\n    dict: AWS configuration status (admin only)",
+                "operationId": "get_aws_configuration_api_files_config_aws_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Get Aws Configuration Api Files Config Aws Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/debug/credentials": {
+            "get": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Debug Aws Credentials",
+                "description": "Debug AWS credentials (admin only)\n\nReturns:\n    dict: AWS credentials debug information",
+                "operationId": "debug_aws_credentials_api_files_debug_credentials_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Debug Aws Credentials Api Files Debug Credentials Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/test-presigned": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Test Presigned Url Generation",
+                "description": "Test presigned URL generation with detailed debugging\n\nArgs:\n    s3_key: S3 object key to test\n    bucket_name: Optional bucket name\n\nReturns:\n    dict: Test results and debug information",
+                "operationId": "test_presigned_url_generation_api_files_test_presigned_post",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_test_presigned_url_generation_api_files_test_presigned_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Test Presigned Url Generation Api Files Test Presigned Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/debug-upload-vs-presigned": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Debug Upload Vs Presigned",
+                "description": "Debug by uploading a file and immediately generating a presigned URL\nThis helps identify if there's a difference in credential handling",
+                "operationId": "debug_upload_vs_presigned_api_files_debug_upload_vs_presigned_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_debug_upload_vs_presigned_api_files_debug_upload_vs_presigned_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Debug Upload Vs Presigned Api Files Debug Upload Vs Presigned Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/simple-presigned-test": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Simple Presigned Test",
+                "description": "Simple presigned URL test using basic boto3 approach",
+                "operationId": "simple_presigned_test_api_files_simple_presigned_test_post",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_simple_presigned_test_api_files_simple_presigned_test_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "title": "Response Simple Presigned Test Api Files Simple Presigned Test Post"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/files/upload-to-outbox": {
+            "post": {
+                "tags": [
+                    "File Upload",
+                    "File Upload"
+                ],
+                "summary": "Upload To Outbox",
+                "description": "Upload file to OUTBOX S3 bucket in partner-specific pending folder\n\nArgs:\n    file: File to upload\n    partner_name: Name of the partner (will be used as folder name)\n\nReturns:\n    dict: Upload result with S3 URL",
+                "operationId": "upload_to_outbox_api_files_upload_to_outbox_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_to_outbox_api_files_upload_to_outbox_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FileUploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/users": {
+            "get": {
+                "tags": [
+                    "Administration",
+                    "User Management"
+                ],
+                "summary": "Get Users",
+                "description": "Get paginated list of users (admin only)",
+                "operationId": "get_users_api_admin_users_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Role"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Is Active"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Administration",
+                    "User Management"
+                ],
+                "summary": "Create User",
+                "description": "Create a new user (admin only)",
+                "operationId": "create_user_api_admin_users_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/users/{user_id}": {
+            "put": {
+                "tags": [
+                    "Administration",
+                    "User Management"
+                ],
+                "summary": "Update User",
+                "description": "Update user information (admin only)",
+                "operationId": "update_user_api_admin_users__user_id__put",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "User Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Administration",
+                    "User Management"
+                ],
+                "summary": "Deactivate User",
+                "description": "Deactivate a user (admin only)",
+                "operationId": "deactivate_user_api_admin_users__user_id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "User Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/admin/settings": {
+            "get": {
+                "tags": [
+                    "Administration",
+                    "System Settings"
+                ],
+                "summary": "Get System Settings",
+                "description": "Get system settings (admin only)",
+                "operationId": "get_system_settings_api_admin_settings_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Administration",
+                    "System Settings"
+                ],
+                "summary": "Update System Settings",
+                "description": "Update system settings (admin only)",
+                "operationId": "update_system_settings_api_admin_settings_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "title": "Settings Data"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseGeneric"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/audit-logs": {
+            "get": {
+                "tags": [
+                    "Administration",
+                    "Audit Logs"
+                ],
+                "summary": "Get Audit Logs",
+                "description": "Get paginated audit logs (admin only)",
+                "operationId": "get_audit_logs_api_admin_audit_logs_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Page"
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Size"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Action"
+                        }
+                    },
+                    {
+                        "name": "resource_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Resource Type"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "User Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/transmission/summary": {
+            "get": {
+                "tags": [
+                    "Reports & Analytics",
+                    "Reports & Analytics"
+                ],
+                "summary": "Get Transmission Summary",
+                "description": "Get transmission summary statistics",
+                "operationId": "get_transmission_summary_api_reports_transmission_summary_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Start Date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "End Date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/transmission/volume": {
+            "get": {
+                "tags": [
+                    "Reports & Analytics",
+                    "Reports & Analytics"
+                ],
+                "summary": "Get Transmission Volume",
+                "description": "Get daily transmission volume data for charts",
+                "operationId": "get_transmission_volume_api_reports_transmission_volume_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Start Date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "End Date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/partners/activity": {
+            "get": {
+                "tags": [
+                    "Reports & Analytics",
+                    "Reports & Analytics"
+                ],
+                "summary": "Get Partner Activity",
+                "description": "Get top partners by message activity",
+                "operationId": "get_partner_activity_api_reports_partners_activity_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Start Date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "End Date"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 50,
+                            "minimum": 1,
+                            "default": 10,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reports/compliance/summary": {
+            "get": {
+                "tags": [
+                    "Reports & Analytics",
+                    "Reports & Analytics"
+                ],
+                "summary": "Get Compliance Summary",
+                "description": "Get compliance summary for regulatory reporting",
+                "operationId": "get_compliance_summary_api_reports_compliance_summary_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/reports/compliance/audit-trail": {
+            "get": {
+                "tags": [
+                    "Reports & Analytics",
+                    "Reports & Analytics"
+                ],
+                "summary": "Get Audit Trail",
+                "description": "Get audit trail for compliance reporting",
+                "operationId": "get_audit_trail_api_reports_compliance_audit_trail_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Start Date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "End Date"
+                        }
+                    },
+                    {
+                        "name": "message_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Message Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Body_create_partner_api_partners__post": {
+                "properties": {
+                    "as2_id": {
+                        "type": "string",
+                        "title": "As2 Id",
+                        "description": "Partner's AS2 identifier"
+                    },
+                    "partner_as2_url": {
+                        "type": "string",
+                        "title": "Partner As2 Url",
+                        "description": "Partner's AS2 endpoint URL"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "organization_type": {
+                        "type": "string",
+                        "title": "Organization Type"
+                    },
+                    "contact_name": {
+                        "type": "string",
+                        "title": "Contact Name"
+                    },
+                    "contact_email": {
+                        "type": "string",
+                        "title": "Contact Email"
+                    },
+                    "contact_phone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Phone"
+                    },
+                    "address": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Address"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes"
+                    },
+                    "message_subject_template": {
+                        "type": "string",
+                        "title": "Message Subject Template",
+                        "default": "AS2 Message from {sender}"
+                    },
+                    "mdn_mode": {
+                        "type": "string",
+                        "title": "Mdn Mode",
+                        "default": "sync"
+                    },
+                    "mdn_signed": {
+                        "type": "boolean",
+                        "title": "Mdn Signed",
+                        "default": true
+                    },
+                    "mdn_receipt_timeout": {
+                        "type": "integer",
+                        "title": "Mdn Receipt Timeout",
+                        "default": 15
+                    },
+                    "mdn_signed_algorithm": {
+                        "type": "string",
+                        "title": "Mdn Signed Algorithm",
+                        "default": "SHA-256"
+                    },
+                    "auto_retry": {
+                        "type": "boolean",
+                        "title": "Auto Retry",
+                        "default": true
+                    },
+                    "max_retry_attempts": {
+                        "type": "integer",
+                        "title": "Max Retry Attempts",
+                        "default": 3
+                    },
+                    "retry_interval": {
+                        "type": "integer",
+                        "title": "Retry Interval",
+                        "default": 5
+                    },
+                    "encryption_algorithm": {
+                        "type": "string",
+                        "title": "Encryption Algorithm",
+                        "default": "3DES"
+                    },
+                    "signing_algorithm": {
+                        "type": "string",
+                        "title": "Signing Algorithm",
+                        "default": "SHA1"
+                    },
+                    "compression": {
+                        "type": "boolean",
+                        "title": "Compression",
+                        "default": false
+                    },
+                    "encryption_certificate": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "Encryption Certificate",
+                        "description": "Partner encryption certificate (.pem file)"
+                    },
+                    "signing_certificate": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "Signing Certificate",
+                        "description": "Partner signing certificate (.pem file)"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "as2_id",
+                    "partner_as2_url",
+                    "name",
+                    "organization_type",
+                    "contact_name",
+                    "contact_email",
+                    "encryption_certificate",
+                    "signing_certificate"
+                ],
+                "title": "Body_create_partner_api_partners__post"
+            },
+            "Body_debug_upload_vs_presigned_api_files_debug_upload_vs_presigned_post": {
+                "properties": {
+                    "test_file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "Test File"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "test_file"
+                ],
+                "title": "Body_debug_upload_vs_presigned_api_files_debug_upload_vs_presigned_post"
+            },
+            "Body_get_presigned_url_api_files_presigned_url_post": {
+                "properties": {
+                    "s3_key": {
+                        "type": "string",
+                        "title": "S3 Key"
+                    },
+                    "bucket_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Bucket Name"
+                    },
+                    "expiration": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Expiration",
+                        "default": 3600
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "s3_key"
+                ],
+                "title": "Body_get_presigned_url_api_files_presigned_url_post"
+            },
+            "Body_send_file_api_transmission_send_post": {
+                "properties": {
+                    "partner_id": {
+                        "type": "integer",
+                        "title": "Partner Id"
+                    },
+                    "subject": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subject"
+                    },
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "partner_id",
+                    "file"
+                ],
+                "title": "Body_send_file_api_transmission_send_post"
+            },
+            "Body_simple_presigned_test_api_files_simple_presigned_test_post": {
+                "properties": {
+                    "s3_key": {
+                        "type": "string",
+                        "title": "S3 Key"
+                    },
+                    "bucket_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Bucket Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "s3_key"
+                ],
+                "title": "Body_simple_presigned_test_api_files_simple_presigned_test_post"
+            },
+            "Body_test_presigned_url_generation_api_files_test_presigned_post": {
+                "properties": {
+                    "s3_key": {
+                        "type": "string",
+                        "title": "S3 Key"
+                    },
+                    "bucket_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Bucket Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "s3_key"
+                ],
+                "title": "Body_test_presigned_url_generation_api_files_test_presigned_post"
+            },
+            "Body_update_partner_api_partners__partner_id__put": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "organization_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Organization Type"
+                    },
+                    "contact_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Name"
+                    },
+                    "contact_email": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Email"
+                    },
+                    "contact_phone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Phone"
+                    },
+                    "address": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Address"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes"
+                    },
+                    "as2_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "As2 Id"
+                    },
+                    "partner_as2_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Partner As2 Url"
+                    },
+                    "message_subject_template": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message Subject Template"
+                    },
+                    "mdn_mode": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Mode"
+                    },
+                    "mdn_signed": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Signed"
+                    },
+                    "mdn_receipt_timeout": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Receipt Timeout"
+                    },
+                    "mdn_signed_algorithm": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Signed Algorithm"
+                    },
+                    "auto_retry": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Auto Retry"
+                    },
+                    "max_retry_attempts": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Max Retry Attempts"
+                    },
+                    "retry_interval": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Retry Interval"
+                    },
+                    "encryption_algorithm": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Algorithm"
+                    },
+                    "signing_algorithm": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Algorithm"
+                    },
+                    "compression": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Compression"
+                    },
+                    "encryption_certificate": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "binary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Certificate",
+                        "description": "New encryption certificate (.pem file)"
+                    },
+                    "signing_certificate": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "binary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Certificate",
+                        "description": "New signing certificate (.pem file)"
+                    }
+                },
+                "type": "object",
+                "title": "Body_update_partner_api_partners__partner_id__put"
+            },
+            "Body_upload_file_api_files_upload_post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    },
+                    "bucket_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Bucket Name"
+                    },
+                    "folder_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Folder Name"
+                    },
+                    "custom_filename": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Custom Filename"
+                    },
+                    "tenant_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tenant Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file"
+                ],
+                "title": "Body_upload_file_api_files_upload_post"
+            },
+            "Body_upload_multiple_files_api_files_upload_multiple_post": {
+                "properties": {
+                    "files": {
+                        "items": {
+                            "type": "string",
+                            "format": "binary"
+                        },
+                        "type": "array",
+                        "title": "Files"
+                    },
+                    "bucket_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Bucket Name"
+                    },
+                    "folder_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Folder Name"
+                    },
+                    "tenant_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tenant Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "files"
+                ],
+                "title": "Body_upload_multiple_files_api_files_upload_multiple_post"
+            },
+            "Body_upload_to_outbox_api_files_upload_to_outbox_post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    },
+                    "partner_name": {
+                        "type": "string",
+                        "title": "Partner Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file",
+                    "partner_name"
+                ],
+                "title": "Body_upload_to_outbox_api_files_upload_to_outbox_post"
+            },
+            "CertificateCreate": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "certificate_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Certificate Type"
+                    },
+                    "owner_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Owner Type"
+                    },
+                    "certificate_key": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Certificate Key"
+                    },
+                    "certificate_data": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "Certificate Data"
+                    },
+                    "private_key_data": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "binary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Private Key Data"
+                    },
+                    "partner_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Partner Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "certificate_data"
+                ],
+                "title": "CertificateCreate"
+            },
+            "CertificateResponse": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "certificate_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Certificate Type"
+                    },
+                    "owner_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Owner Type"
+                    },
+                    "certificate_key": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Certificate Key"
+                    },
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "title": "Tenant Id"
+                    },
+                    "partner_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Partner Id"
+                    },
+                    "subject_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subject Dn"
+                    },
+                    "issuer_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Issuer Dn"
+                    },
+                    "serial_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Serial Number"
+                    },
+                    "key_size": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Key Size"
+                    },
+                    "valid_from": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Valid From"
+                    },
+                    "valid_to": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Valid To"
+                    },
+                    "is_expired": {
+                        "type": "boolean",
+                        "title": "Is Expired"
+                    },
+                    "usage_count": {
+                        "type": "integer",
+                        "title": "Usage Count"
+                    },
+                    "last_used_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Used At"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "title": "Is Active"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "tenant_id",
+                    "partner_id",
+                    "is_expired",
+                    "usage_count",
+                    "last_used_at",
+                    "status",
+                    "is_active",
+                    "created_at"
+                ],
+                "title": "CertificateResponse"
+            },
+            "FileUploadResponse": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "file_url": {
+                        "type": "string",
+                        "title": "File Url"
+                    },
+                    "s3_key": {
+                        "type": "string",
+                        "title": "S3 Key"
+                    },
+                    "bucket_name": {
+                        "type": "string",
+                        "title": "Bucket Name"
+                    },
+                    "tenant_folder": {
+                        "type": "string",
+                        "title": "Tenant Folder"
+                    },
+                    "folder_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Folder Name"
+                    },
+                    "original_filename": {
+                        "type": "string",
+                        "title": "Original Filename"
+                    },
+                    "file_size": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Size"
+                    },
+                    "content_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message",
+                    "file_url",
+                    "s3_key",
+                    "bucket_name",
+                    "tenant_folder",
+                    "original_filename"
+                ],
+                "title": "FileUploadResponse"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "LoginRequest": {
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
+                    },
+                    "mfa_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mfa Code"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "title": "LoginRequest"
+            },
+            "MessageResponse": {
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename"
+                    },
+                    "file_size": {
+                        "type": "integer",
+                        "title": "File Size"
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "title": "Content Type",
+                        "default": "application/xml"
+                    },
+                    "subject": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subject"
+                    },
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "title": "Tenant Id"
+                    },
+                    "partner_id": {
+                        "type": "integer",
+                        "title": "Partner Id"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "title": "User Id"
+                    },
+                    "message_id": {
+                        "type": "string",
+                        "title": "Message Id"
+                    },
+                    "direction": {
+                        "type": "string",
+                        "title": "Direction"
+                    },
+                    "file_path": {
+                        "type": "string",
+                        "title": "File Path"
+                    },
+                    "as2_from": {
+                        "type": "string",
+                        "title": "As2 From"
+                    },
+                    "as2_to": {
+                        "type": "string",
+                        "title": "As2 To"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "mdn_status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Status"
+                    },
+                    "business_ack_status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Business Ack Status"
+                    },
+                    "validation_status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Validation Status"
+                    },
+                    "validation_errors": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Validation Errors"
+                    },
+                    "routing_status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Routing Status"
+                    },
+                    "routing_destination": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Routing Destination"
+                    },
+                    "sent_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sent At"
+                    },
+                    "delivered_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Delivered At"
+                    },
+                    "mdn_received_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Mdn Received At"
+                    },
+                    "processed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Processed At"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "filename",
+                    "file_size",
+                    "id",
+                    "tenant_id",
+                    "partner_id",
+                    "user_id",
+                    "message_id",
+                    "direction",
+                    "file_path",
+                    "as2_from",
+                    "as2_to",
+                    "status",
+                    "mdn_status",
+                    "business_ack_status",
+                    "validation_status",
+                    "validation_errors",
+                    "routing_status",
+                    "routing_destination",
+                    "sent_at",
+                    "delivered_at",
+                    "mdn_received_at",
+                    "processed_at",
+                    "created_at"
+                ],
+                "title": "MessageResponse"
+            },
+            "MessageResponseGeneric": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message"
+                ],
+                "title": "MessageResponseGeneric"
+            },
+            "MultipleFileUploadResponse": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "bucket_name": {
+                        "type": "string",
+                        "title": "Bucket Name"
+                    },
+                    "tenant_folder": {
+                        "type": "string",
+                        "title": "Tenant Folder"
+                    },
+                    "folder_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Folder Name"
+                    },
+                    "uploaded_files": {
+                        "items": {
+                            "type": "object"
+                        },
+                        "type": "array",
+                        "title": "Uploaded Files"
+                    },
+                    "failed_files": {
+                        "items": {
+                            "type": "object"
+                        },
+                        "type": "array",
+                        "title": "Failed Files"
+                    },
+                    "total_uploaded": {
+                        "type": "integer",
+                        "title": "Total Uploaded"
+                    },
+                    "total_failed": {
+                        "type": "integer",
+                        "title": "Total Failed"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message",
+                    "bucket_name",
+                    "tenant_folder",
+                    "uploaded_files",
+                    "failed_files",
+                    "total_uploaded",
+                    "total_failed"
+                ],
+                "title": "MultipleFileUploadResponse"
+            },
+            "PaginatedResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "type": "object"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "title": "Page"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "title": "Size"
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "title": "Pages"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "size",
+                    "pages"
+                ],
+                "title": "PaginatedResponse"
+            },
+            "PartnerResponse": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "title": "Tenant Id"
+                    },
+                    "as2_id": {
+                        "type": "string",
+                        "title": "As2 Id"
+                    },
+                    "as2_station_id": {
+                        "type": "string",
+                        "title": "As2 Station Id"
+                    },
+                    "partner_as2_url": {
+                        "type": "string",
+                        "title": "Partner As2 Url"
+                    },
+                    "message_subject_template": {
+                        "type": "string",
+                        "title": "Message Subject Template"
+                    },
+                    "partner_encryption_certificate": {
+                        "type": "string",
+                        "title": "Partner Encryption Certificate"
+                    },
+                    "partner_signing_certificate": {
+                        "type": "string",
+                        "title": "Partner Signing Certificate"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "organization_type": {
+                        "type": "string",
+                        "title": "Organization Type"
+                    },
+                    "contact_name": {
+                        "type": "string",
+                        "title": "Contact Name"
+                    },
+                    "contact_email": {
+                        "type": "string",
+                        "title": "Contact Email"
+                    },
+                    "contact_phone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Phone"
+                    },
+                    "address": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Address"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes"
+                    },
+                    "endpoint_url": {
+                        "type": "string",
+                        "title": "Endpoint Url"
+                    },
+                    "mdn_mode": {
+                        "type": "string",
+                        "title": "Mdn Mode"
+                    },
+                    "mdn_signed": {
+                        "type": "boolean",
+                        "title": "Mdn Signed"
+                    },
+                    "mdn_receipt_timeout": {
+                        "type": "integer",
+                        "title": "Mdn Receipt Timeout"
+                    },
+                    "mdn_signed_algorithm": {
+                        "type": "string",
+                        "title": "Mdn Signed Algorithm"
+                    },
+                    "auto_retry": {
+                        "type": "boolean",
+                        "title": "Auto Retry"
+                    },
+                    "max_retry_attempts": {
+                        "type": "integer",
+                        "title": "Max Retry Attempts"
+                    },
+                    "retry_interval": {
+                        "type": "integer",
+                        "title": "Retry Interval"
+                    },
+                    "encryption_algorithm": {
+                        "type": "string",
+                        "title": "Encryption Algorithm"
+                    },
+                    "signing_algorithm": {
+                        "type": "string",
+                        "title": "Signing Algorithm"
+                    },
+                    "compression": {
+                        "type": "boolean",
+                        "title": "Compression"
+                    },
+                    "encryption_cert_expiry": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Cert Expiry"
+                    },
+                    "signing_cert_expiry": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Cert Expiry"
+                    },
+                    "encryption_cert_fingerprint": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Cert Fingerprint"
+                    },
+                    "signing_cert_fingerprint": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Cert Fingerprint"
+                    },
+                    "encryption_cert_subject_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Cert Subject Dn"
+                    },
+                    "signing_cert_subject_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Cert Subject Dn"
+                    },
+                    "encryption_cert_issuer_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Encryption Cert Issuer Dn"
+                    },
+                    "signing_cert_issuer_dn": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signing Cert Issuer Dn"
+                    },
+                    "aws_encryption_certificate_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Encryption Certificate Id"
+                    },
+                    "aws_signing_certificate_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Signing Certificate Id"
+                    },
+                    "aws_partner_profile_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Partner Profile Id"
+                    },
+                    "aws_agreement_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Agreement Id"
+                    },
+                    "aws_connector_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Connector Id"
+                    },
+                    "aws_base_directory": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aws Base Directory"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "last_test_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Test Date"
+                    },
+                    "last_test_result": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Test Result"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "title": "Is Active"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "tenant_id",
+                    "as2_id",
+                    "as2_station_id",
+                    "partner_as2_url",
+                    "message_subject_template",
+                    "partner_encryption_certificate",
+                    "partner_signing_certificate",
+                    "name",
+                    "organization_type",
+                    "contact_name",
+                    "contact_email",
+                    "contact_phone",
+                    "address",
+                    "notes",
+                    "endpoint_url",
+                    "mdn_mode",
+                    "mdn_signed",
+                    "mdn_receipt_timeout",
+                    "mdn_signed_algorithm",
+                    "auto_retry",
+                    "max_retry_attempts",
+                    "retry_interval",
+                    "encryption_algorithm",
+                    "signing_algorithm",
+                    "compression",
+                    "encryption_cert_expiry",
+                    "signing_cert_expiry",
+                    "encryption_cert_fingerprint",
+                    "signing_cert_fingerprint",
+                    "encryption_cert_subject_dn",
+                    "signing_cert_subject_dn",
+                    "encryption_cert_issuer_dn",
+                    "signing_cert_issuer_dn",
+                    "aws_encryption_certificate_id",
+                    "aws_signing_certificate_id",
+                    "aws_partner_profile_id",
+                    "aws_agreement_id",
+                    "aws_connector_id",
+                    "aws_base_directory",
+                    "status",
+                    "last_test_date",
+                    "last_test_result",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "PartnerResponse"
+            },
+            "PresignedUrlResponse": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "presigned_url": {
+                        "type": "string",
+                        "title": "Presigned Url"
+                    },
+                    "s3_key": {
+                        "type": "string",
+                        "title": "S3 Key"
+                    },
+                    "bucket_name": {
+                        "type": "string",
+                        "title": "Bucket Name"
+                    },
+                    "expires_in_seconds": {
+                        "type": "integer",
+                        "title": "Expires In Seconds"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "title": "Expires At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message",
+                    "presigned_url",
+                    "s3_key",
+                    "bucket_name",
+                    "expires_in_seconds",
+                    "expires_at"
+                ],
+                "title": "PresignedUrlResponse"
+            },
+            "RegisterRequest": {
+                "properties": {
+                    "company_name": {
+                        "type": "string",
+                        "title": "Company Name"
+                    },
+                    "domain": {
+                        "type": "string",
+                        "title": "Domain"
+                    },
+                    "as2_identifier": {
+                        "type": "string",
+                        "title": "As2 Identifier"
+                    },
+                    "contact_email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Contact Email"
+                    },
+                    "contact_phone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Contact Phone"
+                    },
+                    "address": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Address"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "title": "First Name"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "title": "Last Name"
+                    },
+                    "admin_email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Admin Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "company_name",
+                    "domain",
+                    "as2_identifier",
+                    "contact_email",
+                    "first_name",
+                    "last_name",
+                    "admin_email",
+                    "password"
+                ],
+                "title": "RegisterRequest"
+            },
+            "Token": {
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token"
+                    },
+                    "refresh_token": {
+                        "type": "string",
+                        "title": "Refresh Token"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "title": "Token Type",
+                        "default": "bearer"
+                    },
+                    "expires_in": {
+                        "type": "integer",
+                        "title": "Expires In"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "access_token",
+                    "refresh_token",
+                    "expires_in"
+                ],
+                "title": "Token"
+            },
+            "UserCreate": {
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "title": "First Name"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "title": "Last Name"
+                    },
+                    "username": {
+                        "type": "string",
+                        "title": "Username"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "phone_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Phone Number"
+                    },
+                    "role": {
+                        "type": "string",
+                        "title": "Role"
+                    },
+                    "permissions": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Permissions"
+                    },
+                    "usergroup": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Usergroup"
+                    },
+                    "designation": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Designation"
+                    },
+                    "expertise_areas": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Expertise Areas"
+                    },
+                    "issendnotification": {
+                        "type": "boolean",
+                        "title": "Issendnotification",
+                        "default": false
+                    },
+                    "auth_type": {
+                        "type": "string",
+                        "title": "Auth Type",
+                        "default": "Standard"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "title": "Tenant Id"
+                    },
+                    "reference_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reference Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "email",
+                    "role",
+                    "password",
+                    "tenant_id"
+                ],
+                "title": "UserCreate"
+            },
+            "UserResponse": {
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "title": "First Name"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "title": "Last Name"
+                    },
+                    "username": {
+                        "type": "string",
+                        "title": "Username"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "phone_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Phone Number"
+                    },
+                    "role": {
+                        "type": "string",
+                        "title": "Role"
+                    },
+                    "permissions": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Permissions"
+                    },
+                    "usergroup": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Usergroup"
+                    },
+                    "designation": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Designation"
+                    },
+                    "expertise_areas": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Expertise Areas"
+                    },
+                    "issendnotification": {
+                        "type": "boolean",
+                        "title": "Issendnotification",
+                        "default": false
+                    },
+                    "auth_type": {
+                        "type": "string",
+                        "title": "Auth Type",
+                        "default": "Standard"
+                    },
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "tenant_id": {
+                        "type": "integer",
+                        "title": "Tenant Id"
+                    },
+                    "reference_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reference Id"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "title": "Is Active"
+                    },
+                    "ispasswordchange": {
+                        "type": "boolean",
+                        "title": "Ispasswordchange"
+                    },
+                    "wrong_password_count": {
+                        "type": "integer",
+                        "title": "Wrong Password Count"
+                    },
+                    "two_fa_secret": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Two Fa Secret"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "last_login": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Login"
+                    },
+                    "password_reset_required": {
+                        "type": "boolean",
+                        "title": "Password Reset Required"
+                    },
+                    "account_locked": {
+                        "type": "boolean",
+                        "title": "Account Locked"
+                    },
+                    "account_locked_until": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Account Locked Until"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "first_name",
+                    "last_name",
+                    "username",
+                    "email",
+                    "role",
+                    "id",
+                    "tenant_id",
+                    "is_active",
+                    "ispasswordchange",
+                    "wrong_password_count",
+                    "status",
+                    "password_reset_required",
+                    "account_locked",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "UserResponse"
+            },
+            "UserUpdate": {
+                "properties": {
+                    "first_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "First Name"
+                    },
+                    "last_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Name"
+                    },
+                    "username": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Username"
+                    },
+                    "email": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "email"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Email"
+                    },
+                    "phone_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Phone Number"
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role"
+                    },
+                    "permissions": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Permissions"
+                    },
+                    "usergroup": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Usergroup"
+                    },
+                    "designation": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Designation"
+                    },
+                    "expertise_areas": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Expertise Areas"
+                    },
+                    "issendnotification": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Issendnotification"
+                    },
+                    "is_active": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Is Active"
+                    },
+                    "ispasswordchange": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ispasswordchange"
+                    },
+                    "password_reset_required": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Password Reset Required"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    }
+                },
+                "type": "object",
+                "title": "UserUpdate"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        },
+        "securitySchemes": {
+            "HTTPBearer": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    }
+}

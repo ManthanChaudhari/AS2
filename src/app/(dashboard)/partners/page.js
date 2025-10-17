@@ -1,45 +1,48 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Users, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Users, AlertTriangle, CheckCircle, Clock, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PartnerTable } from "@/components/partners/partner-table";
+import ApiService from "@/lib/ApiServiceFunctions";
+import { transformPartnersResponse, calculatePartnerStats } from "@/lib/partnerDataTransform";
 
-// Dummy summary stats
-const partnerStats = [
+// Stats configuration
+const getStatsConfig = (stats) => [
   {
     title: "Total Partners",
-    value: 8,
+    value: stats.total,
     icon: Users,
     color: "text-blue-600",
     bgColor: "bg-blue-100 dark:bg-blue-900",
   },
   {
     title: "Active Partners",
-    value: 5,
+    value: stats.active,
     icon: CheckCircle,
     color: "text-green-600",
     bgColor: "bg-green-100 dark:bg-green-900",
   },
   {
     title: "Testing Partners",
-    value: 2,
+    value: stats.testing,
     icon: Clock,
     color: "text-yellow-600",
     bgColor: "bg-yellow-100 dark:bg-yellow-900",
   },
   {
     title: "Certificate Alerts",
-    value: 3,
+    value: stats.certificateAlerts,
     icon: AlertTriangle,
     color: "text-red-600",
     bgColor: "bg-red-100 dark:bg-red-900",
   },
 ];
 
-function StatCard({ stat }) {
+function StatCard({ stat, loading }) {
   const Icon = stat.icon;
 
   return (
@@ -62,7 +65,11 @@ function StatCard({ stat }) {
       {/* Value */}
       <div className="relative">
         <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 transition-all duration-300 group-hover:scale-105">
-          {stat.value}
+          {loading ? (
+            <Loader2 className="h-8 w-8 animate-spin" />
+          ) : (
+            stat.value
+          )}
         </div>
       </div>
 
@@ -75,6 +82,44 @@ function StatCard({ stat }) {
 }
 
 export default function PartnersPage() {
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    testing: 0,
+    inactive: 0,
+    certificateAlerts: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Fetch all partners to calculate stats
+  const fetchPartnerStats = async () => {
+    setStatsLoading(true);
+    
+    try {
+      // Fetch all partners (with a large page size to get all)
+      const response = await ApiService.getPartners({ size: 1000 });
+      
+      if (response.error) {
+        console.error('Failed to fetch partner stats:', response.error);
+      } else {
+        // Transform API response and calculate stats
+        const transformedPartners = transformPartnersResponse(response.data.items || response.data.data || []);
+        const calculatedStats = calculatePartnerStats(transformedPartners);
+        setStats(calculatedStats);
+      }
+    } catch (err) {
+      console.error('Error fetching partner stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPartnerStats();
+  }, []);
+
+  const partnerStats = getStatsConfig(stats);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -96,7 +141,7 @@ export default function PartnersPage() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {partnerStats.map((stat, index) => (
-          <StatCard key={index} stat={stat} />
+          <StatCard key={index} stat={stat} loading={statsLoading} />
         ))}
       </div>
 

@@ -22,6 +22,14 @@ const ApiEndPoints = {
     UPDATE: (id) => `${BASE_URL}/api/partners/${id}`,
     DELETE: (id) => `${BASE_URL}/api/partners/${id}`
   },
+
+  AS2_TRANSMISSION : {
+    CREATE : `${BASE_URL}/api/transmit/send`,
+    GET_HISTORY : `${BASE_URL}/api/transmit/history`,
+    GET_SIGNED_URL : `${BASE_URL}/api/transmit/download`,
+    RETRY : `${BASE_URL}/api/transmit/retry`,
+    STATUS : `${BASE_URL}/api/transmit/status`
+  },
   
   // Legacy endpoint for backward compatibility
   refreshToken: `${BASE_URL}/api/auth/refresh`

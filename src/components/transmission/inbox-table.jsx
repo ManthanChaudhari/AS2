@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   MoreHorizontal,
   Eye,
@@ -44,6 +44,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { transformPartnersResponse } from "@/lib/partnerDataTransform";
 import ApiService from "@/lib/ApiServiceFunctions";
 import ApiEndPoints from "@/lib/ApiServiceEndpoint";
+import SyncDialog from "./sync-dialog";
+import { createDebounce } from "@/lib/utils";
 
 const messageTypeLabels = {
   icsr: "ICSR",
@@ -188,8 +190,8 @@ function MessageActions({ message }) {
     // In real app: navigate to message detail page
   };
 
-    const handleDownload = async (type) => {
-      console.log({message})
+  const handleDownload = async (type) => {
+    console.log({ message });
     try {
       const res = await ApiService.get(
         `${ApiEndPoints?.AS2_TRANSMISSION?.GET_SIGNED_INBOX_URL}/${message?.message_id}?artifact_type=${type}`
@@ -275,14 +277,14 @@ export function InboxTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [partners, setPartners] = useState([]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (fileQuery) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
 
       if (currentPage) params.append("page", currentPage);
       if (pageSize) params.append("size", pageSize);
-      if (searchQuery) params.append("search", searchQuery);
+      if (fileQuery) params.append("filename", fileQuery);
       if (statusFilter) params.append("status", statusFilter);
       if (partnerFilter?.id) params.append("partner_id", partnerFilter?.id);
 
@@ -304,9 +306,20 @@ export function InboxTable() {
     }
   };
 
+  const debouncedSearch = useCallback(
+    createDebounce(async (query) => {
+      await fetchMessages(query);
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery)
+  },[searchQuery])
+
   useEffect(() => {
     fetchMessages();
-  }, [currentPage, pageSize, searchQuery, statusFilter, partnerFilter]);
+  }, [currentPage, pageSize, statusFilter, partnerFilter]);
 
   const fetchPartners = async () => {
     try {
@@ -353,7 +366,7 @@ export function InboxTable() {
       setSelectedMessages(selectedMessages.filter((id) => id !== messageId));
     }
   };
-  
+
   const handleBulkDownload = () => {
     console.log("Bulk download messages:", selectedMessages);
   };
@@ -462,6 +475,7 @@ export function InboxTable() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
+            <SyncDialog partners={partners} fetchMessages={fetchMessages} />
           </div>
         </div>
       </CardHeader>
@@ -486,11 +500,8 @@ export function InboxTable() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>All Statuses</SelectItem>
-                {/* <SelectItem value="new">New</SelectItem> */}
                 <SelectItem value="processed">Processing</SelectItem>
-                <SelectItem value="failed">
-                  Validation Failed
-                </SelectItem>
+                <SelectItem value="failed">Validation Failed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={partnerFilter} onValueChange={setPartnerFilter}>

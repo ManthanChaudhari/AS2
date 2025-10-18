@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   MoreHorizontal,
   Eye,
@@ -44,6 +44,7 @@ import ApiService from "@/lib/ApiServiceFunctions";
 import ApiEndPoints from "@/lib/ApiServiceEndpoint";
 import { id } from "date-fns/locale";
 import { transformPartnersResponse } from "@/lib/partnerDataTransform";
+import { createDebounce } from "@/lib/utils";
 
 const statusLabels = {
   sending: "Sending",
@@ -185,6 +186,10 @@ function MessageActions({ message }) {
           <Download className="mr-2 h-4 w-4" />
           Download Status File
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleDownload("ack")}>
+          <Download className="mr-2 h-4 w-4" />
+          Download Acknowledgment
+        </DropdownMenuItem>
         {(message.status === "failed" || message.status === "mdn_timeout") && (
           <>
             <DropdownMenuSeparator />
@@ -241,14 +246,14 @@ export function OutboxTable() {
     fetchPartners();
   }, []);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (fileQuery) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
 
       if (currentPage) params.append("page", currentPage);
       if (pageSize) params.append("size", pageSize);
-      if (searchQuery) params.append("search", searchQuery);
+      if (fileQuery) params.append("fileQuery", fileQuery);
       if (statusFilter) params.append("status", statusFilter);
       if (partnerFilter?.id) params.append("partner_id", partnerFilter?.id);
       if (priorityFilter) params.append("priority", priorityFilter);
@@ -271,16 +276,20 @@ export function OutboxTable() {
     }
   };
 
+  const debouncedSearch = useCallback(
+    createDebounce(async (query) => {
+      await fetchMessages(query);
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchMessages();
-  }, [
-    currentPage,
-    pageSize,
-    searchQuery,
-    statusFilter,
-    partnerFilter,
-    priorityFilter,
-  ]);
+  }, [currentPage, pageSize, statusFilter, partnerFilter, priorityFilter]);
 
   const handleSort = (field) => {
     if (sortField === field) {

@@ -48,19 +48,15 @@ const useAuth = () => {
       ApiService.setToken(access_token);
       ApiService.setRefreshToken(refresh_token);
 
-      // Store tokens in localStorage and cookies
+      // Store tokens in cookies
       if (typeof window !== "undefined") {
-        localStorage.setItem("token", access_token);
-        localStorage.setItem("refresh_token", refresh_token);
-
-        // Store in cookies for middleware access (secure, httpOnly in production)
         Cookies.set("token", access_token, {
-          expires: 1, // 1 day
+          expires: 1,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
         });
         Cookies.set("refresh_token", refresh_token, {
-          expires: 7, // 7 days
+          expires: 7,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
         });
@@ -186,10 +182,18 @@ const useAuth = () => {
     ApiService.setToken(access_token);
     ApiService.setRefreshToken(newRefreshToken);
 
-    // Store new tokens in localStorage
+    // Store new tokens
     if (typeof window !== "undefined") {
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("refresh_token", newRefreshToken);
+      Cookies.set("token", access_token, {
+        expires: 1,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+      Cookies.set("refresh_token", newRefreshToken, {
+        expires: 7,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
     }
 
     // Update Redux state
@@ -298,8 +302,8 @@ const useAuth = () => {
   const restoreSession = useCallback(async () => {
     if (typeof window === "undefined") return;
 
-    const storedToken = localStorage.getItem("token");
-    const storedRefreshToken = localStorage.getItem("refresh_token");
+    const storedToken = Cookies.get("token")
+    const storedRefreshToken = Cookies.get("refresh_token");
 
     if (storedToken && storedRefreshToken) {
       // Set tokens in ApiService
@@ -337,7 +341,6 @@ const useAuth = () => {
   // Automatic token refresh mechanism
   useEffect(() => {
     if (isAuthenticated && refreshToken) {
-      
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }

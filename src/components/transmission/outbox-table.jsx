@@ -282,41 +282,6 @@ export function OutboxTable() {
     priorityFilter,
   ]);
 
-  // Get unique partners for filter
-
-  // Filter and sort messages
-  const filteredMessages = messages
-    .filter((message) => {
-      const matchesSearch =
-        message.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.recipient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        message.messageId.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || message.status === statusFilter;
-      const matchesPartner =
-        partnerFilter === "all" || message.recipient === partnerFilter;
-      const matchesPriority =
-        priorityFilter === "all" || message.priority === priorityFilter;
-
-      return (
-        matchesSearch && matchesStatus && matchesPartner && matchesPriority
-      );
-    })
-    .sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-
-      if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-
-  // Pagination
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedMessages = messages;
-
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -328,7 +293,7 @@ export function OutboxTable() {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedMessages(paginatedMessages.map((m) => m.id));
+      setSelectedMessages(messages.map((m) => m.id));
     } else {
       setSelectedMessages([]);
     }
@@ -498,8 +463,8 @@ export function OutboxTable() {
                   <th className="p-4 text-left">
                     <Checkbox
                       checked={
-                        selectedMessages.length === paginatedMessages.length &&
-                        paginatedMessages.length > 0
+                        selectedMessages.length === messages.length &&
+                        messages.length > 0
                       }
                       onCheckedChange={handleSelectAll}
                     />
@@ -552,7 +517,7 @@ export function OutboxTable() {
               </thead>
               <tbody>
                 {!isLoading ? (
-                  paginatedMessages.map((message) => (
+                  messages.map((message) => (
                     <tr key={message.id} className="border-b hover:bg-muted/50">
                       <td className="p-4">
                         <Checkbox

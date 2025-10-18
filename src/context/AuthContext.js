@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useEffect, useState } from "react";
 import useAuthHook from "@/hooks/useAuth";
+import Cookies from "js-cookie";
 
 const AuthContext = createContext(null);
 
@@ -15,7 +16,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Check if we're in the browser
         if (typeof window !== 'undefined') {
-          const hasStoredTokens = localStorage.getItem('token') && localStorage.getItem('refresh_token');
+          const hasStoredTokens = Cookies.get('token') && Cookies.get('refresh_token');
 
           if (hasStoredTokens && !auth.isAuthenticated && !auth.isLoading) {
             // Try to restore session

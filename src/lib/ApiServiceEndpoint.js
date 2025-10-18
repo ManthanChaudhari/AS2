@@ -29,7 +29,14 @@ const ApiEndPoints = {
     GET_SIGNED_URL : `${BASE_URL}/api/transmit/download`,
     RETRY : `${BASE_URL}/api/transmit/retry`,
     STATUS : `${BASE_URL}/api/transmit/status`,
-    DOWNLOAD_URL : `${BASE_URL}/api/transmit/artifacts`
+    DOWNLOAD_URL : `${BASE_URL}/api/transmit/artifacts`,
+    GET_INBOX : `${BASE_URL}/api/receive/history`,
+    GET_SIGNED_INBOX_URL : `${BASE_URL}/api/receive/download`,
+    SYNC_INBOX_FILE : `${BASE_URL}/api/receive/sync`,
+  },
+
+  USER_MANAGEMENT : {
+    USER_ALL : `${BASE_URL}/api/admin/users`,
   },
   
   // Legacy endpoint for backward compatibility

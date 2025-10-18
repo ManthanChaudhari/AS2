@@ -84,10 +84,6 @@ export default function UsersPage() {
             Manage user accounts, roles, and permissions
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </div>
 
       {/* Stats Cards */}

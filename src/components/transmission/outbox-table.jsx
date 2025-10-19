@@ -478,7 +478,6 @@ export function OutboxTable() {
                       onCheckedChange={handleSelectAll}
                     />
                   </th>
-                  <th className="p-4 text-left">Status</th>
                   <th className="p-4 text-left">
                     <Button
                       variant="ghost"
@@ -536,12 +535,7 @@ export function OutboxTable() {
                           }
                         />
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(message.status)}
-                          {getStatusBadge(message.status)}
-                        </div>
-                      </td>
+
                       <td className="p-4">
                         <div className="font-mono text-sm">
                           {message.message_id}
@@ -580,9 +574,12 @@ export function OutboxTable() {
                           {message.status === "timeout" && (
                             <AlertTriangle className="h-4 w-4 text-orange-600" />
                           )}
-                          <span className="text-sm capitalize">
-                            {message.status}
-                          </span>
+                          <td className="p-4">
+                            <div className="flex items-center space-x-2">
+                              {getStatusIcon(message.status)}
+                              {getStatusBadge(message.status)}
+                            </div>
+                          </td>
                         </div>
                       </td>
                       {/* <td className="p-4">

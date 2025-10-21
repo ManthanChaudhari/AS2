@@ -20,7 +20,8 @@ const ApiEndPoints = {
     CREATE: `${BASE_URL}/api/partners/`,
     GET: (id) => `${BASE_URL}/api/partners/${id}`,
     UPDATE: (id) => `${BASE_URL}/api/partners/${id}`,
-    DELETE: (id) => `${BASE_URL}/api/partners/${id}`
+    DELETE: (id) => `${BASE_URL}/api/partners/${id}`,
+    UPDATE_CERTIFICATE : (id) => `${BASE_URL}/api/partners/${id}/certificates`
   },
 
   AS2_TRANSMISSION : {
